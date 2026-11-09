@@ -302,7 +302,9 @@ a{color:var(--acc)}
 <p class="note">Google AI Studio(<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>)で無料のAPIキーを作って貼り付けてください。キーはこの端末の中だけに保存されます。電圧降下・電線管アプリでキーを保存していれば、そのまま使えます。</p>
 <div class="aikey"><input id="aiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Gemini APIキー"><button type="button" class="btn sm" id="aiSave">保存</button><button type="button" class="btn sm" id="aiDel">消す</button></div>
 <p class="note" id="aiKMsg" role="status"></p>
-<p class="note">AIに送るのは、写真1枚と、撮影箇所・工程などの欄の言葉だけです(工事名・会社名は送りません)。無料枠では、送った写真がGoogleのAIの改善に使われることがあります。</p>
+<label class="chip" style="margin-top:10px"><input type="checkbox" id="exOn">自分で決めた写真を見本としてAIに送る</label>
+<p class="note">手で場所・工種・工程を決めた写真を、仕分けのたびに最大4枚、見本としていっしょに送ります。使うほど見本が増えて当たりやすくなります(そのぶん少し遅くなります)。</p>
+<p class="note">AIに送るのは、写真と、撮影箇所・工程などの欄の言葉だけです(工事名・会社名は送りません)。無料枠では、送った写真がGoogleのAIの改善に使われることがあります。</p>
 </section>
 <section class="card"><h3>データ</h3>
 <p class="note" style="margin-top:0">写真はこのiPhoneのこのアプリの中だけに保存されます。機種変更や万一に備えて、ときどきバックアップを書き出して「ファイル」やGoogleドライブに保存してください。</p>
@@ -314,7 +316,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v9</p>
+<p class="note" style="text-align:center">施工写真台帳 v10</p>
 </div>
 </div>
 
@@ -614,16 +616,35 @@ const SYS="あなたは電気設備工事の工事写真を整理する助手で
 "- kubun: 写真区分。次から1つ選ぶ: 着工前(工事前の現況) / 施工状況(作業中・施工の途中) / 使用材料(材料・機器の搬入や検収、型番・銘板) / 品質管理(絶縁抵抗・接地抵抗・耐圧などの試験や測定) / 出来形管理(寸法・間隔・深さなどを測って確認) / 安全管理(KY活動・保護具・養生・安全設備) / 完成 / その他。\n"+
 "- koshu: 工種。黒板に書いてあればそれを使う。なければ写真から判断し、なるべく次の候補から選ぶ(合うものがなければ短い言葉で): "+KOSHU.join("、")+"\n"+
 "- shubetsu: 種別。黒板にあればそれを使う。なければなるべく次の候補から: "+SHUBETSU.join("、")+"\n"+
-"- basho: 撮影箇所。黒板か、写真に写った室名札・表示で分かるときだけ書く(例「3階 事務室」「屋上」)。分からなければ空。推測しない。\n"+
+"- basho: 撮影箇所。黒板か、写真に写った室名札・表示で分かるとき、または見本と同じ場所だとはっきり分かるときだけ書く(例「3階 事務室」「屋上」)。分からなければ空。推測しない。\n"+
 "- naiyo: 何の写真か。体言止めで25文字以内。黒板や写真で読み取れる型番・サイズ(例「PF管φ22」「CVT60sq」)は入れてよい。\n"+
 "- biko: 台帳の備考向けに短く1文(40文字以内、体言止めか「〜を確認」)。写真で確かに言えることだけ書く。寸法・数値・合否は黒板やメーターで読めるときだけ書き、読めなければ書かない。書くことがなければ空。\n"+
 "- 写真から判断できない欄は空文字にする。工事の写真でなければ、naiyo に写っているものを書き、ほかは空でよい。\n\n"+
 "# 撮影者が決めた欄\n- 「撮影者が決めた欄」が送られてきたら、それは正しいものとして扱う。その欄は同じ値を返し、ほかの欄はそれに合う内容にする(例: 工程が配管なら、内容は配管の様子を書く。撮影箇所が決まっていれば、それを前提にする)。\n\n"+
+"# 見本\n- 「見本」は撮影者が自分で欄を決めた写真。仕分けする写真が見本と同じ場所・同じ設備に見えるとき(壁・天井・床・機器・周りの様子が同じ)は、見本の撮影箇所・工種・書き方に合わせる。似ていなければ見本にとらわれない。見本の写真そのものは返さない。\n\n"+
 "# 写真が何枚か送られたとき\n- 写真ごとに「# 写真N」と番号と撮影日などが付いている。photos に写真1枚につき1つずつ、no にその番号を入れて、全部の写真について返す。ほかの写真の内容を混ぜない。\n\n"+
 "# 表記\n- この工事ですでに使っている工種・種別の書き方が送られてきたら、同じものはその書き方に合わせる。\n- 日本語で書く。";
 /* まとめて仕分け: BATCH枚ずつ1回でAIに送る(1枚ずつ送るより速く、回数の上限にも当たりにくい)。
    制限時間は 1枚あたり AI_PER ミリ秒+AI_BASE。時間内に終わらなければ、その分は「手入力」にして次へ。1枚ずつ入れ直すときは AI_LIMIT_ONE まで */
 const BATCH=4,AI_PER=6000,AI_BASE=4000,AI_LIMIT_ONE=15000;
+/* 見本: 手で場所・工種・工程を決めた写真を最大 EX_MAX 枚、小さくして(長辺512px)いっしょに送る。見本を送るときは制限時間を AI_EX 足す */
+const EX_MAX=4,AI_EX=2500,EXC=new Map();
+function exOn(){return ls("pl-ex")!=="0"}
+function isMan(p){const m=p.man||{};return !!((m.basho&&p.basho)||(m.koshu&&p.koshu)||(m.koutei&&p.koutei))}
+function tms(p){const t=Date.parse((p.date||"")+"T"+(p.time||"12:00:00"));return isNaN(t)?0:t}
+/* 仕分けする写真と撮った時間が近いものから、場所・工種の組み合わせがかぶらないように選ぶ */
+function pickEx(batch){if(!exOn())return [];const ids=new Set(batch.map(p=>p.id)),c=PH.filter(p=>!ids.has(p.id)&&isMan(p));if(!c.length)return [];
+/* AIが仕分けられず(手入力)、撮影者が自分で入れた写真は見本として特に役に立つので、30分ぶん優先する */
+const bt=batch.map(tms),sc=p=>{const t=tms(p);return Math.min.apply(null,bt.map(b=>Math.abs(b-t)))-(p.ai==="skip"?1800000:0)};
+c.sort((a,b)=>sc(a)-sc(b));const out=[],seen=new Set();
+for(const p of c){const k=(p.basho||"")+"|"+(p.koshu||"");if(seen.has(k))continue;seen.add(k);out.push(p);if(out.length>=EX_MAX)return out}
+for(const p of c){if(out.length>=EX_MAX)break;if(out.indexOf(p)<0)out.push(p)}return out}
+async function exImg(p){let v=EXC.get(p.id);if(v)return v;const img=await DB.img(p.id);if(!img)return null;
+const im=await loadImg(img);let sm;try{sm=await resize(im,512,0.7)}finally{freeImg(im)}v=String(await blobToDataURL(sm.blob)).split(",")[1];EXC.set(p.id,v);return v}
+function exLabel(p){return [["撮影箇所",p.basho],["工種",p.koshu],["工程",p.koutei],["種別",p.shubetsu],["内容",p.naiyo],["備考",p.biko]].filter(x=>(x[1]||"").trim()).map(x=>x[0]+": "+x[1].trim()).join(" / ")}
+async function exParts(batch){const ex=pickEx(batch),parts=[];
+for(let k=0;k<ex.length;k++){let b=null;try{b=await exImg(ex[k])}catch(e){}if(!b)continue;parts.push({text:"見本"+(k+1)+": "+exLabel(ex[k])});parts.push({inlineData:{mimeType:"image/jpeg",data:b}})}
+if(!parts.length)return [];return [{text:"# 見本(撮影者が自分で決めた写真。仕分けする写真と同じ場所・設備に見えるときの参考)"}].concat(parts,[{text:"# ここから仕分けする写真"}])}
 /* 考える量: できるだけ少なく(速く)。モデルが受け付けなければ次の段階へ */
 const THL=["minimal","low",null];
 function think(m,l){if(/^gemini-2\./.test(m))return {thinkingBudget:l==="minimal"?0:512};return {thinkingLevel:l}}
@@ -669,16 +690,16 @@ return "# この工事ですでに使っている言葉(同じものは同じ書
 function aiNote(p){const fixed=FL.filter(([f])=>p.man[f]&&(p[f]||"").trim()&&f!=="naiyo"&&f!=="biko").map(([f,l])=>l+": "+p[f].trim());
 return "撮影日: "+(p.date||"不明")+(fixed.length?"\n撮影者が決めた欄(正しいものとして扱う): "+fixed.join(" / "):"")}
 function alive(p){return PH.indexOf(p)>=0||DEL.indexOf(p)>=0}
-async function analyze(p,limit){const b64=await aiImg(p);
-const parts=[{inlineData:{mimeType:"image/jpeg",data:b64}},{text:aiWords()+"\n\n# この写真\n"+aiNote(p)+"\n\nこの写真1枚について、台帳の欄をJSONで返してください。"}];
-const r=await gem(parts,limit||AI_LIMIT_ONE,SCHEMA),o=parseJ(r.text);if(!o)throw new Error("AIの返事を読み取れませんでした");
+async function analyze(p,limit){const b64=await aiImg(p),ex=await exParts([p]);
+const parts=ex.concat([{inlineData:{mimeType:"image/jpeg",data:b64}},{text:aiWords()+"\n\n# この写真\n"+aiNote(p)+"\n\nこの写真1枚について、台帳の欄をJSONで返してください。"}]);
+const r=await gem(parts,(limit||AI_LIMIT_ONE)+(ex.length?AI_EX:0),SCHEMA),o=parseJ(r.text);if(!o)throw new Error("AIの返事を読み取れませんでした");
 if(!alive(p))return;applyAI(p,o,r.model);if(PH.indexOf(p)>=0)await savePhoto(p)}
 /* 何枚かまとめて送る。返事にない写真は missing に入れて返す */
 async function analyzeBatch(list){if(list.length===1){await analyze(list[0],AI_BASE+AI_PER);return {ok:list,missing:[]}}
-const parts=[];
+const parts=await exParts(list),hasEx=parts.length>0;
 for(let k=0;k<list.length;k++){parts.push({text:"# 写真"+(k+1)+"\n"+aiNote(list[k])});parts.push({inlineData:{mimeType:"image/jpeg",data:await aiImg(list[k])}})}
 parts.push({text:aiWords()+"\n\n上の写真"+list.length+"枚それぞれについて、台帳の欄をJSONで返してください。"});
-const r=await gem(parts,AI_BASE+AI_PER*list.length,SCHEMA_N);
+const r=await gem(parts,AI_BASE+AI_PER*list.length+(hasEx?AI_EX:0),SCHEMA_N);
 let o=null;try{o=JSON.parse(r.text)}catch(e){o=parseJ(r.text)}
 const arr=Array.isArray(o)?o:(o&&Array.isArray(o.photos)?o.photos:null);if(!arr)throw new Error("AIの返事を読み取れませんでした");
 const got=new Set();
@@ -957,7 +978,7 @@ return new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.sprea
 
 /* ===== 設定 ===== */
 function openSt(){flush();
-keyShow();$("aiKMsg").textContent="";$("aiKMsg").classList.remove("ng");$("bkMsg").textContent="";clearFiles($("bkFiles"));thShow();usage();openSheet("st")}
+keyShow();$("exOn").checked=exOn();$("aiKMsg").textContent="";$("aiKMsg").classList.remove("ng");$("bkMsg").textContent="";clearFiles($("bkFiles"));thShow();usage();openSheet("st")}
 $("stBtn").addEventListener("click",openSt);
 $("stBack").addEventListener("click",()=>{closeSheet("st");renderAll()});
 $("pjDel").addEventListener("click",async()=>{if(!confirm("「"+(PJ.name||"工事名なし")+"」と写真"+PH.length+"枚を、この端末から削除します。元に戻せません。よろしいですか?"))return;
@@ -967,6 +988,7 @@ await switchPj(PJS[PJS.length-1].id);ban("工事を削除しました",null,4000
 function keyShow(){const k=keyGet(),i=$("aiKey");i.value="";i.placeholder=k?"保存済み(…"+k.slice(-4)+")":"APIキーを貼り付け";$("aiDel").hidden=!k}
 $("aiSave").addEventListener("click",()=>{const v=$("aiKey").value.replace(/\s+/g,"");const m=$("aiKMsg");m.classList.remove("ng");
 if(!v){m.textContent="キーが入っていません。貼り付けてから「保存」を押してください。";return}keySet(v);keyShow();m.textContent="保存しました。";renderList()});
+$("exOn").addEventListener("change",e=>ls("pl-ex",e.target.checked?"1":"0"));
 $("aiKey").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();$("aiSave").click()}});
 $("aiDel").addEventListener("click",()=>{if(!confirm("この端末からAPIキーを消します。電圧降下・電線管アプリでも使えなくなります。よろしいですか?"))return;keySet("");keyShow();$("aiKMsg").textContent="この端末からキーを消しました。"});
 async function usage(){try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();$("usage").textContent="この端末で使っている容量: 約"+sizeStr(e.usage||0)}}catch(e){}}
