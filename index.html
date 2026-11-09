@@ -75,7 +75,7 @@ label.l{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px;font-wei
 .ph .del{position:absolute;right:4px;top:4px;width:34px;height:34px;border-radius:50%;border:0;padding:0;background:rgba(0,0,0,.58);color:#fff;font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .ph .del:active{background:#c0392b}
 .selmode .ph .del{display:none}
-.st.ok{background:#1a7f4b}.st.err{background:#c0392b}
+.st.ok{background:#1a7f4b}.st.err{background:#c0392b}.st.skip{background:#6b7785}
 .ph .tx{padding:7px 9px 9px;font-size:13px;line-height:1.45;display:block}
 .ph .t0{display:block;font-size:12px;color:var(--acc);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ph .t1{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:700}
@@ -301,7 +301,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v4</p>
+<p class="note" style="text-align:center">施工写真台帳 v5</p>
 </div>
 </div>
 
@@ -410,17 +410,17 @@ function renderList(){const a=sorted(),g=$("grid"),grp=SORT==="koshu"||SORT==="b
 if(grp)a.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
 a.forEach((p,i)=>{
 if(grp){const k=gkey(p);if(k!==cur){cur=k;h+='<div class="gh">'+E(k)+'<span class="note">'+cnt[k]+'枚</span><button type="button" class="gall" data-g="'+E(k)+'">全部選ぶ</button></div>'}}
-const q=AIQ.has(p.id),st=q?'<span class="st ok">'+(AIRUN===p.id?"AI仕分け中":"AI待ち")+'</span>':p.ai==="ok"?'<span class="st ok">AI</span>':(p.ai==="err"?'<span class="st err">AI失敗</span>':"");
+const q=AIQ.has(p.id),st=q?'<span class="st ok">'+(AIRUN===p.id?"AI仕分け中":"AI待ち")+'</span>':p.ai==="ok"?'<span class="st ok">AI</span>':p.ai==="skip"?'<span class="st skip">手入力</span>':(p.ai==="err"?'<span class="st err">AI失敗</span>':"");
 const kt=p.koutei||p.kubun;
 const t1=[kt,p.naiyo||p.shubetsu].filter(Boolean).join(" ・ ");
-const pk=(k,lab,v)=>'<button type="button" class="pick'+(v?"":" unset")+'" data-k="'+k+'" aria-label="'+lab+'を選ぶ"><b>'+lab+'</b><span>'+E(v||(q?"AIが仕分け中…":"未入力"))+'</span><i>▾</i></button>';
+const pk=(k,lab,v)=>'<button type="button" class="pick'+(v?"":" unset")+'" data-k="'+k+'" aria-label="'+lab+'を選ぶ"><b>'+lab+'</b><span>'+E(v||(q?(AIRUN===p.id?"AIが仕分け中…":"AI待ち"):"未入力"))+'</span><i>▾</i></button>';
 const on=SEL&&SEL.ids.has(p.id);
 h+='<div class="ph'+(on?" on":"")+'" role="button" tabindex="0" data-id="'+p.id+'"><span class="im"><img src="'+thumbURL(p)+'" alt="" loading="lazy"><span class="no">No.'+(i+1)+'</span>'+st+'<button type="button" class="del" aria-label="No.'+(i+1)+'の写真を削除">×</button><span class="ck">'+(on?"✓":"")+'</span></span>'+
 '<span class="tx">'+pk("koshu","工種",(p.koshu||"").trim())+pk("basho","場所",(p.basho||"").trim())+
 (t1?'<span class="t1">'+E(t1)+'</span>':"")+'<span class="t2">'+E(fmtDate(p.date))+'</span></span></div>'});
 g.innerHTML=h;$("empty").hidden=a.length>0;
-const ok=PH.filter(p=>p.ai==="ok").length,rest=PH.length-ok;
-$("stats").textContent=PH.length?("全"+PH.length+"枚"+(ok?" ・ AI仕分け済み "+ok+"枚":"")):"";
+const ok=PH.filter(p=>p.ai==="ok").length,skp=PH.filter(p=>p.ai==="skip").length,rest=PH.length-ok-skp;
+$("stats").textContent=PH.length?("全"+PH.length+"枚"+(ok?" ・ AI済み "+ok:"")+(skp?" ・ 手入力 "+skp:"")):"";
 $("aiBtn").hidden=!rest||AIBUSY;$("aiBtn").textContent="AIで仕分け("+rest+")";
 document.querySelectorAll("#sortSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===SORT)));
 if(SEL)selShow()}
@@ -469,9 +469,9 @@ if(i%4===3)renderList()}}
 finally{BUSY=false;renderList()}
 const m=ok+"枚追加しました"+(ng?"("+ng+"枚は読み込めませんでした)":"");
 if(!ok){ban(m,null,5000);return}
-/* 取り込んだら、そのままAIが自動で仕分けする */
-if(keyGet()){ban(m);await sleep(600);bulk(added)}
-else ban(m+"。AIで自動仕分けするには、設定でGeminiのAPIキーを入れてください。",{label:"設定",fn:()=>{banOff();needKey()}},0)}
+/* AIの仕分けは自動では始めない。いらない写真を消してから、ボタンで始める */
+if(keyGet())ban(m+"。いらない写真を消してから「AIで仕分け」を押してください",{label:"AIで仕分け",fn:()=>{banOff();bulk()}},10000);
+else ban(m,null,4000)}
 async function addOne(f){let dt=null;try{dt=exifDate(await f.slice(0,262144).arrayBuffer())}catch(e){}
 const im=await loadImg(f);
 try{const big=await resize(im,1600,0.85),th=await resize(im,360,0.72),d=dt||fileDate(f);
@@ -508,7 +508,8 @@ $("edImg").src=thumbURL(p);
 let b=null;try{b=await DB.img(id)}catch(e){}
 if(ED!==p)return;if(EDURL)URL.revokeObjectURL(EDURL);EDURL=b?URL.createObjectURL(b):"";if(EDURL)$("edImg").src=EDURL}
 function aiStatText(p){if(p.ai==="ok"){const d=new Date(p.aiAt||0);return "AI仕分け済み("+String(p.aiModel||"").replace(/^gemini-/,"")+"・"+(d.getMonth()+1)+"/"+d.getDate()+" "+d.getHours()+":"+pad(d.getMinutes())+")"}
-if(p.ai==="err")return "前回はAIの仕分けに失敗: "+(p.aiErr||"");return "写真と黒板から、自分で決めていない欄をAIが入れます"}
+if(p.ai==="err")return "前回はAIの仕分けに失敗: "+(p.aiErr||"");
+if(p.ai==="skip")return "AIが時間内に終わらなかったので、手で入力してください(「AIで入れ直す」でもう一度試せます)";return "写真と黒板から、自分で決めていない欄をAIが入れます"}
 function fillEd(){const p=ED,i=ORDER.indexOf(p.id);
 $("edTitle").textContent="No."+(i+1)+" / "+ORDER.length;$("edPrev").disabled=i<=0;$("edNext").disabled=i<0||i>=ORDER.length-1;
 $("f-date").value=p.date||"";FL.forEach(([f])=>{$("f-"+f).value=p[f]||""});$("f-board").value=p.board||"";
@@ -528,14 +529,14 @@ if(e.target.closest(".del")){const p=PH.find(x=>x.id===b.dataset.id);if(p)softDe
 $("grid").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("ph")){e.preventDefault();e.target.click()}});
 /* 削除: すぐ一覧から消し、7秒は「元に戻す」で戻せる。そのあと(またはアプリを閉じたとき)本当に消す */
 let DEL=[],delT=null;
-function softDel(p){if(AIRUN===p.id){ban("この写真はAIが仕分け中です。終わってから消してください",null,4000);return}
+function softDel(p){
 AIQ.delete(p.id);clearTimeout(DT.get(p.id));DT.delete(p.id);PH=PH.filter(x=>x!==p);DEL.push(p);renderList();
 clearTimeout(delT);delT=setTimeout(commitDel,7000);
 ban((DEL.length>1?DEL.length+"枚の":"")+"写真を削除しました",{label:"元に戻す",fn:undoDel},7000)}
 function undoDel(){clearTimeout(delT);const n=DEL.length;DEL.forEach(p=>{if(PH.indexOf(p)<0){PH.push(p);savePhoto(p)}});DEL=[];renderList();ban(n+"枚を元に戻しました",null,2500)}
 async function commitDel(){clearTimeout(delT);delT=null;const list=DEL;DEL=[];
 for(const p of list){try{await DB.delPhoto(p.id)}catch(e){ban("削除できませんでした: "+e.message);PH.push(p);renderList();continue}dropThumb(p.id)}}
-$("edDel").addEventListener("click",()=>{const p=ED;if(!p)return;if(AIRUN===p.id){edMsg("AIが仕分け中です。終わってから消してください",true);return}
+$("edDel").addEventListener("click",()=>{const p=ED;if(!p)return;
 const i=ORDER.indexOf(p.id);softDel(p);ORDER.splice(i,1);
 if(!ORDER.length){closeEd();return}openEd(ORDER[Math.min(i,ORDER.length-1)])});
 $("edAi").addEventListener("click",()=>{if(ED)runOne(ED)});
@@ -569,7 +570,11 @@ const SYS="あなたは電気設備工事の工事写真を整理する助手で
 "- 写真から判断できない欄は空文字にする。工事の写真でなければ、naiyo に写っているものを書き、ほかは空でよい。\n\n"+
 "# 撮影者が決めた欄\n- 「撮影者が決めた欄」が送られてきたら、それは正しいものとして扱う。その欄は同じ値を返し、ほかの欄はそれに合う内容にする(例: 工程が配管なら、内容は配管の様子を書く。撮影箇所が決まっていれば、それを前提にする)。\n\n"+
 "# 表記\n- この工事ですでに使っている工種・種別の書き方が送られてきたら、同じものはその書き方に合わせる。\n- 日本語で書く。";
-function think(m){return /^gemini-2\./.test(m)?{thinkingBudget:512}:{thinkingLevel:"low"}}
+/* 1枚あたりの制限時間(ミリ秒)。まとめて仕分けは5秒で終わらなければその写真は「手入力」にして次へ。1枚ずつ入れ直すときは少し長め */
+const AI_LIMIT=5000,AI_LIMIT_ONE=15000;
+/* 考える量: できるだけ少なく(速く)。モデルが受け付けなければ次の段階へ */
+const THL=["minimal","low",null];
+function think(m,l){if(/^gemini-2\./.test(m))return {thinkingBudget:l==="minimal"?0:512};return {thinkingLevel:l}}
 function parseJ(t){let o=null;try{o=JSON.parse(t)}catch(e){const m=String(t).match(/\{[\s\S]*\}/);if(m){try{o=JSON.parse(m[0])}catch(e2){}}}return o&&typeof o==="object"&&!Array.isArray(o)?o:null}
 async function gemOnce(m,body,key,ms){const ctl=new AbortController();let to=false;const tm=setTimeout(()=>{to=true;try{ctl.abort()}catch(e){}},ms);
 let res,tx="";
@@ -586,27 +591,32 @@ const t=c&&c.content&&Array.isArray(c.content.parts)?c.content.parts.filter(p=>p
 if(t.trim())return {text:t};
 if(c&&(c.finishReason==="SAFETY"||c.finishReason==="PROHIBITED_CONTENT"))return {fatal:"AIがこの写真には返事をしませんでした(内容の制限)。"};
 return {note:"返事が空でした"+(c&&c.finishReason?"("+c.finishReason+")":"")}}
-async function gem(b64,user){const key=keyGet();let th=true,sc=true,busy=false,slow=false;const log=[];
-for(let i=0;i<MODELS.length;i++){const m=MODELS[i];
-const g={responseMimeType:"application/json",maxOutputTokens:4096};if(sc)g.responseSchema=SCHEMA;if(th)g.thinkingConfig=think(m);
+let TH0=0; /* 一度「受け付けない」と言われた考える量は、次から使わない */
+async function gem(b64,user,limit){const key=keyGet(),end=Date.now()+limit;let th=TH0,sc=true,busy=false,slow=false;const log=[];
+for(let i=0;i<MODELS.length;i++){const m=MODELS[i],left=end-Date.now();
+if(left<700){slow=true;break}
+const g={responseMimeType:"application/json",maxOutputTokens:2048};if(sc)g.responseSchema=SCHEMA;if(THL[th])g.thinkingConfig=think(m,THL[th]);
 const body=JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:[{role:"user",parts:[{inlineData:{mimeType:"image/jpeg",data:b64}},{text:user}]}],generationConfig:g});
-const r=await gemOnce(m,body,key,60000);
+const r=await gemOnce(m,body,key,left);
 if(r.text!=null)return {text:r.text,model:m};
 if(r.fatal){const e=new Error(r.fatal);e.fatal=true;throw e}
 const sm=m.replace(/^gemini-/,"");
-if(r.status===400&&th){th=false;i--;log.push(sm+": 400");continue}
+if(r.status===400&&th<THL.length-1){th++;TH0=th;i--;log.push(sm+": 400");continue}
 if(r.status===400&&sc){sc=false;i--;log.push(sm+": 400");continue}
-if(r.status===429)busy=true;if(r.slow)slow=true;log.push(sm+": "+r.note)}
-const e=new Error(busy?"無料枠の回数の上限に当たりました。":slow?"AIの返事が来ませんでした。Googleのサーバーが混んでいるのかもしれません。":"AIから返事がもらえませんでした。");
-e.busy=busy;e.detail=log.join(" / ");throw e}
-async function analyze(p){const img=await DB.img(p.id);if(!img)throw new Error("写真のデータが見つかりません");
-const b64=String(await blobToDataURL(img)).split(",")[1];
+if(r.slow){slow=true;break}
+if(r.status===429)busy=true;log.push(sm+": "+r.note)}
+const sec=Math.round(limit/1000);
+const e=new Error(slow?"AIが"+sec+"秒で終わらなかったので止めました。":busy?"無料枠の回数の上限に当たりました。":"AIから返事がもらえませんでした。");
+e.slow=slow;e.busy=!slow&&busy;e.detail=log.join(" / ");throw e}
+async function analyze(p,limit){const img=await DB.img(p.id);if(!img)throw new Error("写真のデータが見つかりません");
+const im=await loadImg(img);let small;try{small=await resize(im,1024,0.8)}finally{freeImg(im)}
+const b64=String(await blobToDataURL(small.blob)).split(",")[1];
 const ks=uniq(PH.map(x=>x.koshu)),ss=uniq(PH.map(x=>x.shubetsu));
 const fixed=FL.filter(([f])=>p.man[f]&&(p[f]||"").trim()&&f!=="naiyo"&&f!=="biko").map(([f,l])=>l+": "+p[f].trim());
 const user="# この工事ですでに使っている言葉(同じものは同じ書き方にそろえる)\n工種: "+(ks.join("、")||"(まだなし)")+"\n種別: "+(ss.join("、")||"(まだなし)")+
 (fixed.length?"\n\n# 撮影者が決めた欄(正しいものとして扱う)\n"+fixed.join("\n"):"")+
 "\n\n# 撮影日\n"+(p.date||"不明")+"\n\nこの写真1枚について、台帳の欄をJSONで返してください。";
-const r=await gem(b64,user),o=parseJ(r.text);if(!o)throw new Error("AIの返事を読み取れませんでした");
+const r=await gem(b64,user,limit||AI_LIMIT),o=parseJ(r.text);if(!o)throw new Error("AIの返事を読み取れませんでした");
 if(PH.indexOf(p)<0&&DEL.indexOf(p)<0)return;applyAI(p,o,r.model);if(PH.indexOf(p)>=0)await savePhoto(p)}
 function applyAI(p,o,m){const v=k=>String(o[k]==null?"":o[k]).replace(/\s+/g," ").trim();
 const vals={koutei:KL.indexOf(v("koutei"))>=0?v("koutei"):"",kubun:KUBUN.indexOf(v("kubun"))>=0?v("kubun"):"",koshu:v("koshu"),shubetsu:v("shubetsu"),basho:v("basho"),naiyo:v("naiyo"),biko:v("biko")};
@@ -618,25 +628,28 @@ function needKey(){openSt();$("aiKMsg").textContent="先にGeminiのAPIキーを
 async function runOne(p){if(AIBUSY||BUSY)return;if(!keyGet()){needKey();return}
 AIBUSY=true;const b=$("edAi"),t0=Date.now();b.disabled=true;
 const tick=setInterval(()=>{b.textContent="解析中… "+Math.round((Date.now()-t0)/1000)+"秒"},500);
-edMsg("写真をAIに送っています(10〜30秒ほど)");
-try{await analyze(p);if(ED===p){fillEd();fillLists()}edMsg("")}
-catch(e){if(!e.fatal){p.ai="err";p.aiErr=e.message;savePhoto(p)}if(ED===p){fillEd();edMsg(e.message+(e.busy?"1分ほど待ってから、もう一度押してください。":"")+(e.detail?"("+e.detail+")":""),true)}}
+edMsg("写真をAIに送っています(長くても"+AI_LIMIT_ONE/1000+"秒で止めます)");
+try{await analyze(p,AI_LIMIT_ONE);if(ED===p){fillEd();fillLists()}edMsg("")}
+catch(e){if(!e.fatal){p.ai=e.slow?"skip":"err";p.aiErr=e.message;if(PH.indexOf(p)>=0)savePhoto(p)}
+if(ED===p){fillEd();edMsg(e.message+(e.slow?"手で入力するか、電波のよいところでもう一度試してください。":e.busy?"1分ほど待ってから、もう一度押してください。":"")+(e.detail&&!e.slow?"("+e.detail+")":""),true)}}
 finally{clearInterval(tick);b.disabled=false;b.textContent="AIで入れ直す";AIBUSY=false}}
 /* まとめてAI。targets を渡したらその写真(仕分け済みでも入れ直す)、なければまだの写真全部 */
 let AIRUN="";const AIQ=new Set();
 async function bulk(targets){if(AIBUSY||BUSY)return;if(!keyGet()){needKey();return}
-const list=targets?targets.filter(p=>PH.indexOf(p)>=0):sorted().filter(p=>p.ai!=="ok");if(!list.length){ban("AIで仕分けしていない写真はありません",null,3500);return}
-AIBUSY=true;STOP=false;let done=0,ng=0,stopMsg="";list.forEach(p=>AIQ.add(p.id));renderList();
+const list=targets?targets.filter(p=>PH.indexOf(p)>=0):sorted().filter(p=>p.ai!=="ok"&&p.ai!=="skip");if(!list.length){ban("AIで仕分けしていない写真はありません",null,3500);return}
+AIBUSY=true;STOP=false;let done=0,ng=0,sk=0,stopMsg="";list.forEach(p=>AIQ.add(p.id));renderList();
 const stopper={label:"止める",fn:()=>{STOP=true;$("banMsg").textContent="止めています…(いまの1枚が終わったら止まります)"}};
 try{for(let i=0;i<list.length&&!STOP;i++){const p=list[i];let tries=0;if(PH.indexOf(p)<0)continue;AIRUN=p.id;renderList();
 for(;;){ban("AIが仕分け中… "+(i+1)+" / "+list.length,stopper);
-try{await analyze(p);done++;break}
+try{await analyze(p,AI_LIMIT);if(PH.indexOf(p)>=0)done++;break}
 catch(e){if(e.fatal)throw e;
+/* 5秒で終わらなかった写真は「手入力」にして、すぐ次へ */
+if(e.slow){p.ai="skip";p.aiErr=e.message;if(PH.indexOf(p)>=0)savePhoto(p);sk++;break}
 if(e.busy&&tries<2&&!STOP){tries++;for(let s=40;s>0&&!STOP;s--){ban("回数の上限に当たったので待っています… あと"+s+"秒("+(i+1)+" / "+list.length+")",stopper);await sleep(1000)}if(STOP)break;continue}
 if(e.busy){stopMsg="無料枠の回数の上限に当たったので止めました。しばらく待ってから「AIで仕分け」で続きを実行してください(1日の上限は夕方16〜17時ごろリセット)。";STOP=true;break}
-p.ai="err";p.aiErr=e.message;savePhoto(p);ng++;break}}
-AIQ.delete(p.id);AIRUN="";renderList();if(i<list.length-1&&!STOP)await sleep(1200)}
-ban(stopMsg||("AIで"+done+"枚仕分けしました"+(ng?"("+ng+"枚は失敗。写真を開いて「AIで入れ直す」でやり直せます)":"")+(STOP?"(途中で止めました)":"")),null,stopMsg?0:9000)}
+p.ai="err";p.aiErr=e.message;if(PH.indexOf(p)>=0)savePhoto(p);ng++;break}}
+AIQ.delete(p.id);AIRUN="";renderList();if(i<list.length-1&&!STOP)await sleep(300)}
+ban(stopMsg||("AIで"+done+"枚仕分けしました"+(sk?"。"+sk+"枚は"+AI_LIMIT/1000+"秒で終わらなかったので「手入力」にしました":"")+(ng?"。"+ng+"枚は失敗(写真を開いて「AIで入れ直す」でやり直せます)":"")+(STOP?"(途中で止めました)":"")),null,stopMsg?0:9000)}
 catch(e){ban(e.message,null,0)}
 finally{AIBUSY=false;AIRUN="";AIQ.clear();renderList()}}
 $("aiBtn").addEventListener("click",()=>{if(!PH.length){ban("先に写真を追加してください",null,3000);return}bulk()});
