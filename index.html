@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<script>try{var _t=localStorage.getItem("app-theme");if(_t==="light"||_t==="dark")document.documentElement.setAttribute("data-theme",_t)}catch(e){}</script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>施工写真台帳</title>
+<meta name="description" content="工事写真を取り込み、AI(Gemini)が工種・内容・黒板の文字を入力。工種ごと・日付順に並べて、施工写真台帳をPDFとExcelで出力します。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="写真台帳">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eef2f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1721" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#14212e;--sub:#5b6b7b;--line:#cfd8e1;--acc:#1f5fa8;--on-acc:#fff;--ok:#1a7f4b;--ng:#c0392b;--wa:#a86400;--head:#e3eaf1;--shade:rgba(20,33,46,.06);
+--font:"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1721;--card:#18232f;--ink:#e8eef4;--sub:#9aabbb;--line:#2b3a4a;--acc:#6aa8ee;--on-acc:#0f1721;--ok:#4cc38a;--ng:#ff7b6b;--wa:#f0b14a;--head:#1f2d3b;--shade:rgba(0,0,0,.25);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1721;--card:#18232f;--ink:#e8eef4;--sub:#9aabbb;--line:#2b3a4a;--acc:#6aa8ee;--on-acc:#0f1721;--ok:#4cc38a;--ng:#ff7b6b;--wa:#f0b14a;--head:#1f2d3b;--shade:rgba(0,0,0,.25);color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+html.lock,html.lock body{overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;
+padding:calc(env(safe-area-inset-top,0px) + 14px) max(14px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 100px) max(14px,env(safe-area-inset-left,0px))}
+main{max-width:980px;margin:0 auto}
+h1,h2,h3{line-height:1.35}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.top h1{font-size:21px;margin:0;flex:1;letter-spacing:.02em}
+.ib{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);width:42px;height:42px;border-radius:12px;display:grid;place-items:center;cursor:pointer;padding:0}
+.ib svg{width:22px;height:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.card h3{font-size:15px;margin:0 0 6px}
+select,input,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%;min-height:44px}
+input[type=date]{min-width:0;-webkit-appearance:none;appearance:none}
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:0;border-color:transparent}
+label.l{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px;font-weight:700}
+.btn{appearance:none;font:inherit;font-weight:700;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;line-height:1.3;text-align:center;-webkit-tap-highlight-color:transparent}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
+.btn.sm{padding:6px 11px;font-size:14px;min-height:38px;border-radius:10px}
+.btn.danger{color:var(--ng)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.vh{position:absolute!important;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+.note{font-size:13px;color:var(--sub);margin:6px 0 0}
+.ng{color:var(--ng)!important}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.seg button{flex:1;appearance:none;border:0;border-left:1px solid var(--line);background:transparent;color:var(--sub);font:inherit;font-size:14px;padding:8px 6px;min-height:40px;cursor:pointer}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--acc);color:var(--on-acc);font-weight:700}
+.tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 10px}
+.tools .seg{flex:1;min-width:240px;max-width:420px}
+.tools .note{margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px}
+.gh{grid-column:1/-1;font-weight:700;font-size:15px;margin:10px 2px -2px;display:flex;gap:8px;align-items:baseline;border-bottom:2px solid var(--line);padding-bottom:4px}
+.gh:first-child{margin-top:0}
+.gh .note{margin:0;font-weight:400}
+.ph{appearance:none;text-align:left;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent}
+.ph:active{transform:scale(.985)}
+.ph .im{position:relative;aspect-ratio:4/3;background:var(--head);display:block;overflow:hidden}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.ph .no{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.62);color:#fff;font-size:12px;border-radius:6px;padding:1px 7px;font-weight:700}
+.ph .st{position:absolute;right:6px;top:6px;font-size:11px;border-radius:6px;padding:1px 7px;font-weight:700;color:#fff}
+.st.ok{background:#1a7f4b}.st.err{background:#c0392b}
+.ph .tx{padding:7px 9px 9px;font-size:13px;line-height:1.45;display:block}
+.ph .t0{display:block;font-size:12px;color:var(--acc);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph .t1{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:700}
+.ph .t2{display:block;color:var(--sub);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{text-align:center;padding:26px 18px}
+.empty p{margin:4px 0}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);
+padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.bar .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:8px}
+.bar .btn{padding:10px 4px;font-size:14px;min-height:48px;position:relative}
+.ban{position:fixed;left:12px;right:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:25;max-width:640px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 10px 10px 14px;display:flex;gap:8px;align-items:center;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.ban .msg{flex:1}
+.ban button{appearance:none;font:inherit;font-weight:700;border:0;border-radius:9px;padding:7px 11px;cursor:pointer;background:var(--bg);color:var(--ink);white-space:nowrap}
+.ban button.x{background:transparent;color:var(--bg);padding:4px 6px;font-size:18px;line-height:1}
+.sheet{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+.sh-h{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;
+padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) 8px max(10px,env(safe-area-inset-left,0px))}
+.sh-h h2{flex:1;font-size:16px;margin:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-h .sp{width:74px}
+.sh-b{max-width:760px;margin:0 auto;padding:12px max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px))}
+.edimg{background:#000;border-radius:12px;overflow:hidden;display:flex;justify-content:center;align-items:center;min-height:180px}
+.edimg img{max-width:100%;max-height:46vh;object-fit:contain;display:block}
+.aibar{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.aibar .note{margin:0;flex:1;min-width:150px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.row2>div{min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;background:var(--card);cursor:pointer;user-select:none}
+.chip input{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--acc)}
+.chip .note{margin:0}
+.files{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+.files li{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.files .fn{font-weight:700;word-break:break-all}
+.files .fn .note{display:block;font-weight:400;margin:2px 0 0}
+.files .fb{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.aikey{display:flex;gap:8px;margin-top:8px}
+.aikey input{flex:1;min-width:0}
+.prog{height:6px;border-radius:3px;background:var(--head);overflow:hidden;margin-top:10px}
+.prog i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+a{color:var(--acc)}
+@media (min-width:760px){.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}}
+</style>
+</head>
+<body>
+<main>
+<header class="top">
+<h1>施工写真台帳</h1>
+<button type="button" class="ib" id="stBtn" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+
+<section class="card">
+<select id="pjSel" aria-label="工事を選ぶ"></select>
+<div id="pjNameCard" hidden>
+<label class="l" for="pjName">工事名</label>
+<input id="pjName" type="text" autocomplete="off" placeholder="例: ○○ビル改修電気設備工事">
+<p class="note">台帳の上に入ります。工事場所・施工者は右上の設定から入れられます。</p>
+</div>
+</section>
+
+<div class="tools">
+<div class="seg" id="sortSeg" role="group" aria-label="並べ方"><button type="button" data-s="koshu">工種ごと</button><button type="button" data-s="date">日付順</button><button type="button" data-s="add">追加順</button></div>
+<p class="note" id="stats"></p>
+</div>
+
+<div class="grid" id="grid"></div>
+<div class="card empty" id="empty" hidden>
+<p><b>まだ写真がありません</b></p>
+<p class="note">下の「写真を追加」から、撮った写真を選ぶか、その場で撮影してください。AIが写真や黒板の文字から工種・内容などを入れて、工種ごと・日付順に並べます。</p>
+</div>
+<p class="note" id="bootMsg"></p>
+</main>
+
+<div class="ban" id="ban" role="status" hidden><span class="msg" id="banMsg"></span><button type="button" id="banAct" hidden></button><button type="button" class="x" id="banX" aria-label="閉じる">×</button></div>
+
+<nav class="bar"><div class="in">
+<label class="btn pri" id="addBtn">＋ 写真を追加<input type="file" id="fileIn" class="vh" accept="image/*" multiple></label>
+<button type="button" class="btn" id="aiBtn">AIで入力</button>
+<button type="button" class="btn" id="exBtn">台帳を出力</button>
+</div></nav>
+
+<!-- 写真の編集 -->
+<div class="sheet" id="ed" hidden>
+<div class="sh-h"><button type="button" class="btn sm" id="edBack">‹ 一覧</button><h2 id="edTitle"></h2><button type="button" class="btn sm" id="edPrev" aria-label="前の写真">◀</button><button type="button" class="btn sm" id="edNext" aria-label="次の写真">▶</button></div>
+<div class="sh-b">
+<div class="edimg"><img id="edImg" alt="写真"></div>
+<div class="aibar"><button type="button" class="btn pri" id="edAi">AIで入力</button><p class="note" id="edAiSt"></p></div>
+<p class="note" id="edMsg" role="status"></p>
+<div class="row2">
+<div><label class="l" for="f-date">撮影日</label><input type="date" id="f-date" data-f="date"></div>
+<div><label class="l" for="f-kubun">写真区分</label><select id="f-kubun" data-f="kubun"></select></div>
+</div>
+<div class="row2">
+<div><label class="l" for="f-koshu">工種</label><input type="text" id="f-koshu" data-f="koshu" list="dl-koshu" autocomplete="off"></div>
+<div><label class="l" for="f-shubetsu">種別</label><input type="text" id="f-shubetsu" data-f="shubetsu" list="dl-shu" autocomplete="off"></div>
+</div>
+<label class="l" for="f-basho">撮影箇所</label><input type="text" id="f-basho" data-f="basho" list="dl-basho" autocomplete="off" placeholder="例: 3階 事務室">
+<label class="l" for="f-naiyo">内容</label><input type="text" id="f-naiyo" data-f="naiyo" autocomplete="off" placeholder="例: 天井内 PF管φ22 隠ぺい配管">
+<label class="l" for="f-biko">備考</label><textarea id="f-biko" data-f="biko" rows="2"></textarea>
+<label class="l" for="f-board">黒板の文字(AIが読み取ったもの・台帳には出ません)</label><textarea id="f-board" data-f="board" rows="2"></textarea>
+<p class="note">自分で書き換えた欄は、AIで入力し直しても上書きされません(空にすると、またAIが入れます)。</p>
+<div class="btns"><button type="button" class="btn danger" id="edDel">この写真を削除</button></div>
+</div>
+</div>
+<datalist id="dl-koshu"></datalist><datalist id="dl-shu"></datalist><datalist id="dl-basho"></datalist>
+
+<!-- 台帳の出力 -->
+<div class="sheet" id="ex" hidden>
+<div class="sh-h"><button type="button" class="btn sm" id="exBack">‹ 戻る</button><h2>台帳を出力</h2><span class="sp"></span></div>
+<div class="sh-b">
+<section class="card"><h3>形式</h3>
+<div class="seg" id="fmtSeg" role="group" aria-label="形式"><button type="button" data-v="pdf">PDF</button><button type="button" data-v="xlsx">Excel</button><button type="button" data-v="both">両方</button></div>
+<p class="note">A4縦に写真3枚ずつ並べた台帳です。Excelには写真なしの「一覧」シートも付きます。</p></section>
+<section class="card"><h3>出力する写真</h3>
+<p class="note" style="margin-top:0">工種</p>
+<div class="chips" id="exKoshu"></div>
+<div class="row2">
+<div><label class="l" for="exFrom">撮影日(から)</label><input type="date" id="exFrom"></div>
+<div><label class="l" for="exTo">撮影日(まで)</label><input type="date" id="exTo"></div>
+</div>
+<p class="note" id="exCount"></p></section>
+<button type="button" class="btn pri wide" id="exGo">台帳を作成</button>
+<div class="prog" id="exProg" hidden><i id="exBar"></i></div>
+<p class="note" id="exMsg" role="status"></p>
+<ul class="files" id="exFiles"></ul>
+</div>
+</div>
+
+<!-- 設定 -->
+<div class="sheet" id="st" hidden>
+<div class="sh-h"><button type="button" class="btn sm" id="stBack">‹ 戻る</button><h2>設定</h2><span class="sp"></span></div>
+<div class="sh-b">
+<section class="card"><h3>工事情報</h3>
+<label class="l" for="s-name">工事名</label><input type="text" id="s-name" data-p="name" autocomplete="off">
+<label class="l" for="s-place">工事場所</label><input type="text" id="s-place" data-p="place" autocomplete="off">
+<label class="l" for="s-company">施工者(会社名)</label><input type="text" id="s-company" data-p="company" autocomplete="off">
+<p class="note">工事名・工事場所・施工者は台帳の上に入ります。</p>
+<div class="btns"><button type="button" class="btn sm" id="pjAdd">＋ 新しい工事</button><button type="button" class="btn sm danger" id="pjDel">この工事を削除</button></div>
+</section>
+<section class="card" id="aiCard"><h3>AI(Gemini)</h3>
+<p class="note">Google AI Studio(<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>)で無料のAPIキーを作って貼り付けてください。キーはこの端末の中だけに保存されます。電圧降下・電線管アプリでキーを保存していれば、そのまま使えます。</p>
+<div class="aikey"><input id="aiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Gemini APIキー"><button type="button" class="btn sm" id="aiSave">保存</button><button type="button" class="btn sm" id="aiDel">消す</button></div>
+<p class="note" id="aiKMsg" role="status"></p>
+<p class="note">AIに送るのは、写真1枚と、この工事で使っている工種・種別の言葉だけです(工事名・会社名は送りません)。無料枠では、送った写真がGoogleのAIの改善に使われることがあります。</p>
+</section>
+<section class="card"><h3>データ</h3>
+<p class="note" style="margin-top:0">写真はこのiPhoneのこのアプリの中だけに保存されます。機種変更や万一に備えて、ときどきバックアップを書き出して「ファイル」やGoogleドライブに保存してください。</p>
+<div class="btns"><button type="button" class="btn sm" id="bkOut">この工事をバックアップ</button><label class="btn sm">バックアップを読み込む<input type="file" id="bkIn" class="vh" accept=".json,application/json"></label></div>
+<p class="note" id="bkMsg" role="status"></p>
+<ul class="files" id="bkFiles"></ul>
+<p class="note" id="usage"></p>
+</section>
+<section class="card"><h3>表示</h3>
+<div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
+</section>
+<p class="note" style="text-align:center">施工写真台帳 v1</p>
+</div>
+</div>
+
+<script>
+"use strict";
+(function(){
+/* ===== 小さな道具 ===== */
+const $=id=>document.getElementById(id);
+function E(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let LASTC=0;function stamp(){let t=Date.now();if(t<=LASTC)t=LASTC+1;LASTC=t;return t}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
+function pad(n){return (n<10?"0":"")+n}
+function ymd(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function fmtDate(s){return s?String(s).replace(/-/g,"/"):""}
+function today8(){return ymd(new Date()).replace(/-/g,"")}
+function fsafe(s){return String(s||"").replace(/[\\/:*?"<>|\s]+/g,"_").replace(/^_+|_+$/g,"").slice(0,40)}
+function sizeStr(n){return n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
+
+/* ===== 決まった言葉 ===== */
+const KUBUN=["着工前","施工状況","使用材料","品質管理","出来形管理","安全管理","完成","その他"];
+/* 工種: 台帳ではこの順に並べる(ここにない工種は後ろに五十音順) */
+const KOSHU=["仮設","電灯設備","コンセント設備","動力設備","幹線設備","受変電設備","発電設備","蓄電池設備","雷保護設備","接地設備","弱電設備","電話・LAN設備","テレビ共聴設備","拡声設備","インターホン設備","監視カメラ設備","防犯・入退室管理設備","自動火災報知設備","非常照明・誘導灯設備","構内配電線路","構内通信線路","撤去"];
+const SHUBETSU=["配管","ケーブル敷設","配線","ケーブルラック","器具取付","盤据付","機器据付","結線・端末処理","接地工事","支持・固定","貫通部処理","防火区画貫通処理","埋設・掘削","はつり・穴あけ","試験・測定","材料検収","搬入","養生","撤去","清掃・片付け"];
+const FL=[["kubun","写真区分"],["koshu","工種"],["shubetsu","種別"],["basho","撮影箇所"],["naiyo","内容"],["biko","備考"]];
+
+/* ===== 保存(IndexedDB) =====
+   projects: 工事 / photos: 写真の情報(小さいサムネイル入り) / images: 写真本体(長辺1600px) */
+let _db=null;
+function db(){if(_db)return _db;_db=new Promise((res,rej)=>{let r;try{r=indexedDB.open("photo-ledger",1)}catch(e){rej(e);return}
+r.onupgradeneeded=()=>{const d=r.result;
+if(!d.objectStoreNames.contains("projects"))d.createObjectStore("projects",{keyPath:"id"});
+if(!d.objectStoreNames.contains("photos")){const s=d.createObjectStore("photos",{keyPath:"id"});s.createIndex("pj","pj",{unique:false})}
+if(!d.objectStoreNames.contains("images"))d.createObjectStore("images",{keyPath:"id"})};
+r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error||new Error("保存場所を開けませんでした"))});return _db}
+function rq(r){return new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function wtx(stores,fn){const d=await db();return new Promise((res,rej)=>{const t=d.transaction(stores,"readwrite");t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error||new Error("保存できませんでした"));fn(t)})}
+const DB={
+all:async s=>rq((await db()).transaction(s).objectStore(s).getAll()),
+byPj:async pj=>rq((await db()).transaction("photos").objectStore("photos").index("pj").getAll(pj)),
+img:async id=>{const r=await rq((await db()).transaction("images").objectStore("images").get(id));return r?r.img:null},
+put:(s,v)=>wtx([s],t=>t.objectStore(s).put(v)),
+addPhoto:(m,img)=>wtx(["photos","images"],t=>{t.objectStore("photos").put(m);t.objectStore("images").put({id:m.id,img})}),
+delPhoto:id=>wtx(["photos","images"],t=>{t.objectStore("photos").delete(id);t.objectStore("images").delete(id)}),
+delProject:(pj,ids)=>wtx(["projects","photos","images"],t=>{t.objectStore("projects").delete(pj);ids.forEach(id=>{t.objectStore("photos").delete(id);t.objectStore("images").delete(id)})})};
+
+/* ===== 状態 ===== */
+let PJS=[],PJ=null,PH=[],SORT=ls("pl-sort")||"koshu",BUSY=false,AIBUSY=false,STOP=false;
+const THU=new Map();
+if(["koshu","date","add"].indexOf(SORT)<0)SORT="koshu";
+
+/* ===== 画像 ===== */
+function loadImg(blob){return new Promise((res,rej)=>{const u=URL.createObjectURL(blob),im=new Image();
+im.onload=()=>{im._u=u;res(im)};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("画像を読み込めませんでした"))};im.src=u})}
+function freeImg(im){if(im&&im._u){URL.revokeObjectURL(im._u);im._u=null}}
+async function resize(im,max,q){const W=im.naturalWidth,H=im.naturalHeight,s=Math.min(1,max/Math.max(W,H)),w=Math.max(1,Math.round(W*s)),h=Math.max(1,Math.round(H*s));
+const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);x.imageSmoothingQuality="high";x.drawImage(im,0,0,w,h);
+const b=await new Promise(r=>c.toBlob(r,"image/jpeg",q));c.width=c.height=0;if(!b)throw new Error("画像を縮小できませんでした");return {blob:b,w,h}}
+function blobToDataURL(b){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(b)})}
+async function dataURLToBlob(u){const r=await fetch(u);return r.blob()}
+
+/* 写真の撮影日時(EXIFのDateTimeOriginal)を読む。読めなければ null */
+function exifDate(buf){try{const v=new DataView(buf);if(v.getUint16(0)!==0xFFD8)return null;let o=2;
+while(o+4<=v.byteLength){const m=v.getUint16(o);if((m&0xFF00)!==0xFF00)break;if(m===0xFFDA)break;const len=v.getUint16(o+2);
+if(m===0xFFE1&&o+10<v.byteLength&&v.getUint32(o+4)===0x45786966){const r=tiffDate(v,o+10);if(r)return r}o+=2+len}}catch(e){}return null}
+function tiffDate(v,t){const le=v.getUint16(t)===0x4949,g16=p=>v.getUint16(p,le),g32=p=>v.getUint32(p,le);
+function str(e){const cnt=g32(e+4),off=cnt>4?t+g32(e+8):e+8;let s="";for(let i=0;i<cnt&&i<32;i++){const c=v.getUint8(off+i);if(!c)break;s+=String.fromCharCode(c)}return s}
+function scan(ifd,want){const n=g16(ifd);for(let i=0;i<n;i++){const e=ifd+2+i*12;if(g16(e)===want)return e}return 0}
+const ifd0=t+g32(t+4);let s="";const ep=scan(ifd0,0x8769);
+if(ep){const ex=t+g32(ep+8),e=scan(ex,0x9003)||scan(ex,0x9004);if(e)s=str(e)}
+if(!s){const e=scan(ifd0,0x0132);if(e)s=str(e)}
+const m=s.match(/^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);if(!m||m[1]==="0000")return null;
+return {date:m[1]+"-"+m[2]+"-"+m[3],time:m[4]+":"+m[5]+":"+m[6]}}
+function fileDate(f){const d=new Date(f.lastModified||Date.now());return {date:ymd(d),time:pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds())}}
+
+/* ===== 一覧 ===== */
+function sorted(list){list=(list||PH).slice();
+const cust=[...new Set(list.map(p=>(p.koshu||"").trim()).filter(k=>k&&KOSHU.indexOf(k)<0))].sort((a,b)=>a.localeCompare(b,"ja"));
+const ki=p=>{const k=(p.koshu||"").trim();if(!k)return 1e4;const i=KOSHU.indexOf(k);return i>=0?i:500+cust.indexOf(k)};
+const bd=(x,y)=>(x.date||"9999-99-99").localeCompare(y.date||"9999-99-99")||(x.time||"").localeCompare(y.time||"")||x.created-y.created;
+if(SORT==="date")list.sort(bd);else if(SORT==="add")list.sort((x,y)=>x.created-y.created);else list.sort((x,y)=>ki(x)-ki(y)||bd(x,y));
+return list}
+function thumbURL(p){let u=THU.get(p.id);if(!u&&p.thumb){u=URL.createObjectURL(p.thumb);THU.set(p.id,u)}return u||""}
+function dropThumb(id){const u=THU.get(id);if(u){URL.revokeObjectURL(u);THU.delete(id)}}
+function gkey(p){return (p.koshu||"").trim()||"工種未入力"}
+function renderList(){const a=sorted(),g=$("grid");let h="",cur=null;const cnt={};
+if(SORT==="koshu")a.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
+a.forEach((p,i)=>{
+if(SORT==="koshu"){const k=gkey(p);if(k!==cur){cur=k;h+='<div class="gh">'+E(k)+'<span class="note">'+cnt[k]+'枚</span></div>'}}
+const st=p.ai==="ok"?'<span class="st ok">AI</span>':(p.ai==="err"?'<span class="st err">AI失敗</span>':"");
+const t0=SORT==="koshu"?[p.kubun,p.shubetsu].filter(Boolean).join(" ・ "):[p.koshu,p.shubetsu].filter(Boolean).join(" ・ ");
+const t1=p.naiyo||p.shubetsu||"";
+h+='<button type="button" class="ph" data-id="'+p.id+'"><span class="im"><img src="'+thumbURL(p)+'" alt="" loading="lazy"><span class="no">No.'+(i+1)+'</span>'+st+'</span>'+
+'<span class="tx">'+(t0?'<span class="t0">'+E(t0)+'</span>':"")+'<span class="t1">'+(t1?E(t1):'<span class="note">未入力</span>')+'</span>'+
+'<span class="t2">'+E(fmtDate(p.date))+(p.basho?" ・ "+E(p.basho):"")+'</span></span></button>'});
+g.innerHTML=h;$("empty").hidden=a.length>0;
+const ok=PH.filter(p=>p.ai==="ok").length,rest=PH.length-ok;
+$("stats").textContent=PH.length?("全"+PH.length+"枚"+(ok?" ・ AI入力済み "+ok+"枚":"")):"";
+$("aiBtn").textContent=rest?"AIで入力("+rest+")":"AIで入力";$("aiBtn").title="AIがまだ入れていない写真をまとめて入力";
+document.querySelectorAll("#sortSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===SORT)))}
+
+function renderPj(){const s=$("pjSel");
+s.innerHTML=PJS.map(p=>'<option value="'+p.id+'">'+E(p.name||"(工事名なし)")+'</option>').join("")+'<option value="__new">＋ 新しい工事を追加</option>';
+s.value=PJ.id;$("pjNameCard").hidden=!!(PJ.name||"").trim();if((PJ.name||"")!==$("pjName").value&&document.activeElement!==$("pjName"))$("pjName").value=PJ.name||""}
+function renderAll(){renderPj();renderList()}
+
+/* ===== お知らせ帯 ===== */
+let banT=null,banFn=null;
+function ban(msg,act,hide){const b=$("ban");b.hidden=false;$("banMsg").textContent=msg;const a=$("banAct");
+if(act){a.hidden=false;a.textContent=act.label;banFn=act.fn}else{a.hidden=true;banFn=null}
+clearTimeout(banT);if(hide)banT=setTimeout(()=>{b.hidden=true},hide)}
+function banOff(){clearTimeout(banT);$("ban").hidden=true}
+$("banAct").addEventListener("click",()=>{if(banFn)banFn()});
+$("banX").addEventListener("click",banOff);
+
+/* ===== 工事 ===== */
+function newProject(name){return {id:uid(),name:name||"",place:"",company:"",created:stamp()}}
+async function loadPhotos(){THU.forEach(u=>URL.revokeObjectURL(u));THU.clear();PH=await DB.byPj(PJ.id);PH.forEach(p=>{p.man=p.man||{}})}
+async function switchPj(id){const p=PJS.find(x=>x.id===id);if(!p)return;PJ=p;ls("pl-cur",p.id);await loadPhotos();renderAll()}
+async function addProject(){const p=newProject("");await DB.put("projects",p);PJS.push(p);await switchPj(p.id);return p}
+let pjT=null;
+function pjSave(){clearTimeout(pjT);const p=PJ;pjT=setTimeout(()=>{DB.put("projects",p).catch(e=>ban("保存できませんでした: "+e.message))},400)}
+$("pjSel").addEventListener("change",async e=>{const v=e.target.value;if(v==="__new"){await addProject();$("pjName").focus()}else await switchPj(v)});
+$("pjName").addEventListener("input",e=>{PJ.name=e.target.value;pjSave();const o=$("pjSel").querySelector('option[value="'+PJ.id+'"]');if(o)o.textContent=PJ.name||"(工事名なし)"});
+$("pjName").addEventListener("blur",()=>{if((PJ.name||"").trim())$("pjNameCard").hidden=true});
+
+/* ===== 並べ方 ===== */
+$("sortSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;SORT=b.dataset.s;ls("pl-sort",SORT);renderList()});
+
+/* ===== 写真の取り込み ===== */
+$("fileIn").addEventListener("change",async e=>{const files=[...e.target.files];e.target.value="";if(files.length)await addFiles(files)});
+async function addFiles(files){if(BUSY||AIBUSY){ban("ほかの処理が終わってから追加してください",null,4000);return}
+BUSY=true;let ok=0,ng=0;
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(e){}
+try{for(let i=0;i<files.length;i++){ban("写真を取り込み中… "+(i+1)+" / "+files.length);
+try{await addOne(files[i]);ok++}catch(err){ng++;console.warn(err)}
+if(i%4===3)renderList()}}
+finally{BUSY=false;renderList()}
+const m=ok+"枚追加しました"+(ng?"("+ng+"枚は読み込めませんでした)":"");
+if(ok&&keyGet())ban(m,{label:"AIで入力",fn:()=>{banOff();bulk()}},12000);else ban(m,null,5000)}
+async function addOne(f){let dt=null;try{dt=exifDate(await f.slice(0,262144).arrayBuffer())}catch(e){}
+const im=await loadImg(f);
+try{const big=await resize(im,1600,0.85),th=await resize(im,360,0.72),d=dt||fileDate(f);
+const p={id:uid(),pj:PJ.id,created:stamp(),w:big.w,h:big.h,thumb:th.blob,date:d.date,time:d.time,dateSrc:dt?"exif":"file",
+kubun:"",koshu:"",shubetsu:"",basho:"",naiyo:"",biko:"",board:"",ai:"",aiErr:"",man:{}};
+await DB.addPhoto(p,big.blob);PH.push(p)}
+finally{freeImg(im)}}
+
+/* ===== シート(全画面の画面) ===== */
+function openSheet(id){$(id).hidden=false;$(id).scrollTop=0;document.documentElement.classList.add("lock")}
+function closeSheet(id){$(id).hidden=true;if(["ed","ex","st"].every(s=>$(s).hidden))document.documentElement.classList.remove("lock")}
+
+/* ===== 写真の編集 ===== */
+let ED=null,EDURL="",ORDER=[];
+const DT=new Map();
+function savePhoto(p){return DB.put("photos",p).catch(e=>ban("保存できませんでした: "+e.message))}
+function dirty(p){clearTimeout(DT.get(p.id));DT.set(p.id,setTimeout(()=>{DT.delete(p.id);savePhoto(p)},400))}
+function flush(){DT.forEach((t,id)=>{clearTimeout(t);const p=PH.find(x=>x.id===id);if(p)savePhoto(p)});DT.clear()}
+function uniq(arr){return [...new Set(arr.map(s=>(s||"").trim()).filter(Boolean))]}
+function fillLists(){
+const opt=a=>a.map(v=>'<option value="'+E(v)+'">').join("");
+$("dl-koshu").innerHTML=opt(uniq(PH.map(p=>p.koshu).concat(KOSHU)));
+$("dl-shu").innerHTML=opt(uniq(PH.map(p=>p.shubetsu).concat(SHUBETSU)));
+$("dl-basho").innerHTML=opt(uniq(PH.map(p=>p.basho)))}
+$("f-kubun").innerHTML='<option value="">(未選択)</option>'+KUBUN.map(k=>'<option>'+E(k)+'</option>').join("");
+async function openEd(id){const p=PH.find(x=>x.id===id);if(!p)return;
+if(!ED)ORDER=sorted().map(x=>x.id);
+ED=p;fillLists();fillEd();openSheet("ed");$("edMsg").textContent="";$("edMsg").classList.remove("ng");
+$("edImg").src=thumbURL(p);
+let b=null;try{b=await DB.img(id)}catch(e){}
+if(ED!==p)return;if(EDURL)URL.revokeObjectURL(EDURL);EDURL=b?URL.createObjectURL(b):"";if(EDURL)$("edImg").src=EDURL}
+function aiStatText(p){if(p.ai==="ok"){const d=new Date(p.aiAt||0);return "AI入力済み("+String(p.aiModel||"").replace(/^gemini-/,"")+"・"+(d.getMonth()+1)+"/"+d.getDate()+" "+d.getHours()+":"+pad(d.getMinutes())+")"}
+if(p.ai==="err")return "前回はAI入力に失敗: "+(p.aiErr||"");return "写真と黒板から、空いている欄をAIが入れます"}
+function fillEd(){const p=ED,i=ORDER.indexOf(p.id);
+$("edTitle").textContent="No."+(i+1)+" / "+ORDER.length;$("edPrev").disabled=i<=0;$("edNext").disabled=i<0||i>=ORDER.length-1;
+$("f-date").value=p.date||"";FL.forEach(([f])=>{$("f-"+f).value=p[f]||""});$("f-board").value=p.board||"";
+$("edAiSt").textContent=aiStatText(p);$("edAiSt").classList.toggle("ng",p.ai==="err")}
+document.querySelectorAll("#ed [data-f]").forEach(el=>{const h=()=>{if(!ED)return;const f=el.dataset.f,v=el.value;
+if(f==="date"){if(ED.date===v)return;ED.date=v;ED.dateSrc="man"}else{if((ED[f]||"")===v)return;ED[f]=v;ED.man[f]=!!v.trim()}dirty(ED)};
+el.addEventListener("input",h);el.addEventListener("change",h)});
+function closeEd(){flush();ED=null;ORDER=[];if(EDURL){URL.revokeObjectURL(EDURL);EDURL=""}$("edImg").removeAttribute("src");closeSheet("ed");renderList()}
+$("edBack").addEventListener("click",closeEd);
+function edGo(d){if(!ED)return;flush();const i=ORDER.indexOf(ED.id)+d;if(i>=0&&i<ORDER.length)openEd(ORDER[i])}
+$("edPrev").addEventListener("click",()=>edGo(-1));$("edNext").addEventListener("click",()=>edGo(1));
+$("grid").addEventListener("click",e=>{const b=e.target.closest(".ph");if(b)openEd(b.dataset.id)});
+$("edDel").addEventListener("click",async()=>{const p=ED;if(!p)return;if(!confirm("この写真を削除します。元に戻せません。よろしいですか?"))return;
+const i=ORDER.indexOf(p.id);clearTimeout(DT.get(p.id));DT.delete(p.id);
+try{await DB.delPhoto(p.id)}catch(e){ban("削除できませんでした: "+e.message);return}
+PH=PH.filter(x=>x!==p);dropThumb(p.id);ORDER.splice(i,1);
+if(!ORDER.length){closeEd();return}openEd(ORDER[Math.min(i,ORDER.length-1)])});
+$("edAi").addEventListener("click",()=>{if(ED)runOne(ED)});
+function edMsg(t,ng){$("edMsg").textContent=t||"";$("edMsg").classList.toggle("ng",!!ng)}
+
+/* ===== AI(Gemini) =====
+   写真1枚と、この工事で使っている工種・種別の言葉を送り、台帳の欄をJSONでもらう。
+   キーは電圧降下・電線管アプリと同じ localStorage("gemini-key")。同じGitHub Pagesのサイトなので共有される。
+   モデルは上から順に試す(使えない・混んでいる・遅いときは次へ)。自分で書き換えた欄(man)は上書きしない */
+const API="https://generativelanguage.googleapis.com/v1beta/models/";
+const MODELS=["gemini-3.8-flash","gemini-3.6-flash","gemini-flash-latest"];
+let MEMKEY="";
+function keyGet(){return ls("gemini-key")||MEMKEY}
+function keySet(v){MEMKEY=v;ls("gemini-key",v||null)}
+const SCHEMA={type:"OBJECT",properties:{
+board:{type:"STRING"},board_date:{type:"STRING"},
+kubun:{type:"STRING",format:"enum",enum:KUBUN},
+koshu:{type:"STRING"},shubetsu:{type:"STRING"},basho:{type:"STRING"},naiyo:{type:"STRING"},biko:{type:"STRING"}},
+required:["board","board_date","kubun","koshu","shubetsu","basho","naiyo","biko"]};
+const SYS="あなたは電気設備工事の工事写真を整理する助手です。写真1枚を見て、施工写真台帳の欄をJSONで埋めます。\n\n"+
+"# 欄の書き方\n"+
+"- board: 工事用の黒板(小黒板・ホワイトボード・電子小黒板の表示)が写っていれば、書かれている文字を上から順に「 / 」で区切って書き写す。読めない文字は「?」。黒板がなければ空。\n"+
+"- board_date: 黒板に日付があれば YYYY-MM-DD(和暦は西暦に直す)。なければ空。\n"+
+"- kubun: 写真区分。次から1つ選ぶ: 着工前(工事前の現況) / 施工状況(作業中・施工の途中) / 使用材料(材料・機器の搬入や検収、型番・銘板) / 品質管理(絶縁抵抗・接地抵抗・耐圧などの試験や測定) / 出来形管理(寸法・間隔・深さなどを測って確認) / 安全管理(KY活動・保護具・養生・安全設備) / 完成 / その他。\n"+
+"- koshu: 工種。黒板に書いてあればそれを使う。なければ写真から判断し、なるべく次の候補から選ぶ(合うものがなければ短い言葉で): "+KOSHU.join("、")+"\n"+
+"- shubetsu: 種別。黒板にあればそれを使う。なければなるべく次の候補から: "+SHUBETSU.join("、")+"\n"+
+"- basho: 撮影箇所。黒板か、写真に写った室名札・表示で分かるときだけ書く(例「3階 事務室」「屋上」)。分からなければ空。推測しない。\n"+
+"- naiyo: 何の写真か。体言止めで25文字以内。黒板や写真で読み取れる型番・サイズ(例「PF管φ22」「CVT60sq」)は入れてよい。\n"+
+"- biko: 台帳の備考向けに短く1文(40文字以内、体言止めか「〜を確認」)。写真で確かに言えることだけ書く。寸法・数値・合否は黒板やメーターで読めるときだけ書き、読めなければ書かない。書くことがなければ空。\n"+
+"- 写真から判断できない欄は空文字にする。工事の写真でなければ、naiyo に写っているものを書き、ほかは空でよい。\n\n"+
+"# 表記\n- この工事ですでに使っている工種・種別の書き方が送られてきたら、同じものはその書き方に合わせる。\n- 日本語で書く。";
+function think(m){return /^gemini-2\./.test(m)?{thinkingBudget:512}:{thinkingLevel:"low"}}
+function parseJ(t){let o=null;try{o=JSON.parse(t)}catch(e){const m=String(t).match(/\{[\s\S]*\}/);if(m){try{o=JSON.parse(m[0])}catch(e2){}}}return o&&typeof o==="object"&&!Array.isArray(o)?o:null}
+async function gemOnce(m,body,key,ms){const ctl=new AbortController();let to=false;const tm=setTimeout(()=>{to=true;try{ctl.abort()}catch(e){}},ms);
+let res,tx="";
+try{res=await fetch(API+m+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body,signal:ctl.signal,cache:"no-store",referrerPolicy:"no-referrer"});tx=await res.text()}
+catch(e){clearTimeout(tm);if(to)return {note:"時間切れ",slow:true};return {fatal:"通信できませんでした。電波のよいところで、もう一度試してください。"}}
+clearTimeout(tm);let b=null;try{b=JSON.parse(tx)}catch(e){}if(Array.isArray(b))b=b[0];
+if(!res.ok){const er=(b&&b.error)||{},em=String(er.message||""),det=JSON.stringify(er.details||"");
+if(/API_KEY_INVALID|API key not valid|API key expired/i.test(em+det))return {fatal:"APIキーが正しくないようです。設定から入れ直してください。"};
+if(res.status===403)return {fatal:"このAPIキーではGeminiが使えないようです(キーの制限やGoogle AI Studioの設定を確かめてください)。"};
+return {status:res.status,note:res.status===429?"回数の上限":res.status+(em?" "+em.slice(0,60):"")}}
+if(b&&b.promptFeedback&&b.promptFeedback.blockReason)return {fatal:"AIがこの写真には返事をしませんでした(内容の制限)。"};
+const c=b&&b.candidates&&b.candidates[0];
+const t=c&&c.content&&Array.isArray(c.content.parts)?c.content.parts.filter(p=>p&&!p.thought&&typeof p.text==="string").map(p=>p.text).join(""):"";
+if(t.trim())return {text:t};
+if(c&&(c.finishReason==="SAFETY"||c.finishReason==="PROHIBITED_CONTENT"))return {fatal:"AIがこの写真には返事をしませんでした(内容の制限)。"};
+return {note:"返事が空でした"+(c&&c.finishReason?"("+c.finishReason+")":"")}}
+async function gem(b64,user){const key=keyGet();let th=true,sc=true,busy=false,slow=false;const log=[];
+for(let i=0;i<MODELS.length;i++){const m=MODELS[i];
+const g={responseMimeType:"application/json",maxOutputTokens:4096};if(sc)g.responseSchema=SCHEMA;if(th)g.thinkingConfig=think(m);
+const body=JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:[{role:"user",parts:[{inlineData:{mimeType:"image/jpeg",data:b64}},{text:user}]}],generationConfig:g});
+const r=await gemOnce(m,body,key,60000);
+if(r.text!=null)return {text:r.text,model:m};
+if(r.fatal){const e=new Error(r.fatal);e.fatal=true;throw e}
+const sm=m.replace(/^gemini-/,"");
+if(r.status===400&&th){th=false;i--;log.push(sm+": 400");continue}
+if(r.status===400&&sc){sc=false;i--;log.push(sm+": 400");continue}
+if(r.status===429)busy=true;if(r.slow)slow=true;log.push(sm+": "+r.note)}
+const e=new Error(busy?"無料枠の回数の上限に当たりました。":slow?"AIの返事が来ませんでした。Googleのサーバーが混んでいるのかもしれません。":"AIから返事がもらえませんでした。");
+e.busy=busy;e.detail=log.join(" / ");throw e}
+async function analyze(p){const img=await DB.img(p.id);if(!img)throw new Error("写真のデータが見つかりません");
+const b64=String(await blobToDataURL(img)).split(",")[1];
+const ks=uniq(PH.map(x=>x.koshu)),ss=uniq(PH.map(x=>x.shubetsu));
+const user="# この工事ですでに使っている言葉(同じものは同じ書き方にそろえる)\n工種: "+(ks.join("、")||"(まだなし)")+"\n種別: "+(ss.join("、")||"(まだなし)")+
+"\n\n# 撮影日\n"+(p.date||"不明")+"\n\nこの写真1枚について、台帳の欄をJSONで返してください。";
+const r=await gem(b64,user),o=parseJ(r.text);if(!o)throw new Error("AIの返事を読み取れませんでした");applyAI(p,o,r.model);await savePhoto(p)}
+function applyAI(p,o,m){const v=k=>String(o[k]==null?"":o[k]).replace(/\s+/g," ").trim();
+const vals={kubun:KUBUN.indexOf(v("kubun"))>=0?v("kubun"):"",koshu:v("koshu"),shubetsu:v("shubetsu"),basho:v("basho"),naiyo:v("naiyo"),biko:v("biko")};
+FL.forEach(([f])=>{if(!p.man[f])p[f]=vals[f]});
+if(!p.man.board)p.board=String(o.board==null?"":o.board).trim();
+const bd=v("board_date");if(/^\d{4}-\d{2}-\d{2}$/.test(bd)&&p.dateSrc==="file"){p.date=bd;p.dateSrc="board"}
+p.ai="ok";p.aiErr="";p.aiModel=m;p.aiAt=Date.now()}
+function needKey(){openSt();$("aiKMsg").textContent="先にGeminiのAPIキーを入れてください。";$("aiKMsg").classList.add("ng");setTimeout(()=>{$("aiCard").scrollIntoView({block:"start"});$("aiKey").focus()},60)}
+async function runOne(p){if(AIBUSY||BUSY)return;if(!keyGet()){needKey();return}
+AIBUSY=true;const b=$("edAi"),t0=Date.now();b.disabled=true;
+const tick=setInterval(()=>{b.textContent="解析中… "+Math.round((Date.now()-t0)/1000)+"秒"},500);
+edMsg("写真をAIに送っています(10〜30秒ほど)");
+try{await analyze(p);if(ED===p){fillEd();fillLists()}edMsg("")}
+catch(e){if(!e.fatal){p.ai="err";p.aiErr=e.message;savePhoto(p)}if(ED===p){fillEd();edMsg(e.message+(e.busy?"1分ほど待ってから、もう一度押してください。":"")+(e.detail?"("+e.detail+")":""),true)}}
+finally{clearInterval(tick);b.disabled=false;b.textContent="AIで入力";AIBUSY=false}}
+async function bulk(){if(AIBUSY||BUSY)return;if(!keyGet()){needKey();return}
+const list=sorted().filter(p=>p.ai!=="ok");if(!list.length){ban("AIで入力していない写真はありません",null,3500);return}
+AIBUSY=true;STOP=false;let done=0,ng=0,stopMsg="";const stopper={label:"止める",fn:()=>{STOP=true;$("banMsg").textContent="止めています…(いまの1枚が終わったら止まります)"}};
+try{for(let i=0;i<list.length&&!STOP;i++){const p=list[i];let tries=0;
+for(;;){ban("AIで入力中… "+(i+1)+" / "+list.length,stopper);
+try{await analyze(p);done++;break}
+catch(e){if(e.fatal)throw e;
+if(e.busy&&tries<2&&!STOP){tries++;for(let s=40;s>0&&!STOP;s--){ban("回数の上限に当たったので待っています… あと"+s+"秒("+(i+1)+" / "+list.length+")",stopper);await sleep(1000)}if(STOP)break;continue}
+if(e.busy){stopMsg="無料枠の回数の上限に当たったので止めました。しばらく待ってから、続きをもう一度実行してください(1日の上限は夕方16〜17時ごろリセット)。";STOP=true;break}
+p.ai="err";p.aiErr=e.message;savePhoto(p);ng++;break}}
+renderList();if(i<list.length-1&&!STOP)await sleep(1200)}
+ban(stopMsg||("AIで"+done+"枚入力しました"+(ng?"("+ng+"枚は失敗。写真を開いて「AIで入力」でやり直せます)":"")+(STOP?"(途中で止めました)":"")),null,stopMsg?0:9000)}
+catch(e){ban(e.message,null,0)}
+finally{AIBUSY=false;renderList()}}
+$("aiBtn").addEventListener("click",()=>{if(!PH.length){ban("先に写真を追加してください",null,3000);return}bulk()});
+
+/* ===== 出力: 共通 ===== */
+const URLS=[];
+const LIB={pdf:{src:"https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",ok:()=>window.jspdf&&window.jspdf.jsPDF},
+xlsx:{src:"https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js",ok:()=>window.ExcelJS}};
+const LOADING={};
+function need(k){const L=LIB[k];if(L.ok())return Promise.resolve();if(LOADING[k])return LOADING[k];
+LOADING[k]=new Promise((res,rej)=>{const s=document.createElement("script");s.src=L.src;s.crossOrigin="anonymous";
+s.onload=()=>L.ok()?res():rej(new Error("部品を読み込めませんでした"));s.onerror=()=>{delete LOADING[k];s.remove();rej(new Error("出力用の部品を読み込めませんでした。電波のよいところで、もう一度試してください。"))};document.head.appendChild(s)});
+return LOADING[k]}
+function fileItem(ul,blob,name){const u=URL.createObjectURL(blob);URLS.push(u);const li=document.createElement("li");
+const f=new File([blob],name,{type:blob.type||"application/octet-stream"});
+const canShare=!!(navigator.canShare&&(()=>{try{return navigator.canShare({files:[f]})}catch(e){return false}})());
+li.innerHTML='<div class="fn">'+E(name)+'<span class="note">'+sizeStr(blob.size)+'</span></div><div class="fb">'+
+(canShare?'<button type="button" class="btn sm pri" data-a="share">共有・保存</button>':"")+'<a class="btn sm" href="'+u+'" download="'+E(name)+'">ダウンロード</a></div>';
+const sb=li.querySelector('[data-a="share"]');
+if(sb)sb.addEventListener("click",async()=>{try{await navigator.share({files:[f],title:name})}catch(e){if(e&&e.name!=="AbortError")ban("共有できませんでした。「ダウンロード」を試してください。",null,5000)}});
+ul.appendChild(li)}
+function clearFiles(ul){ul.innerHTML=""}
+
+/* ===== 出力: 画面 ===== */
+let FMT=ls("pl-fmt")||"both";if(["pdf","xlsx","both"].indexOf(FMT)<0)FMT="both";
+let EXK=null;
+function exItems(){const f=$("exFrom").value,t=$("exTo").value;
+return sorted().filter(p=>EXK.has(gkey(p))&&(!f||(p.date&&p.date>=f))&&(!t||(p.date&&p.date<=t)))}
+function exRender(){document.querySelectorAll("#fmtSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===FMT)));
+const n=exItems().length;$("exCount").textContent=n?n+"枚 ・ A4で"+Math.ceil(n/3)+"ページ(並びは一覧の「"+({koshu:"工種ごと",date:"日付順",add:"追加順"})[SORT]+"」と同じ)":"出力する写真がありません";
+$("exGo").disabled=!n||BUSY}
+function openEx(){if(!PH.length){ban("先に写真を追加してください",null,3000);return}flush();
+const ks=uniq(sorted().map(gkey));EXK=new Set(ks);const cnt={};PH.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
+$("exKoshu").innerHTML=ks.map(k=>'<label class="chip"><input type="checkbox" checked value="'+E(k)+'">'+E(k)+'<span class="note">'+cnt[k]+'</span></label>').join("");
+$("exMsg").textContent="";$("exMsg").classList.remove("ng");$("exProg").hidden=true;clearFiles($("exFiles"));exRender();openSheet("ex")}
+$("exBtn").addEventListener("click",openEx);
+$("exBack").addEventListener("click",()=>{if(BUSY)return;closeSheet("ex")});
+$("fmtSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;FMT=b.dataset.v;ls("pl-fmt",FMT);exRender()});
+$("exKoshu").addEventListener("change",e=>{const c=e.target;if(c.checked)EXK.add(c.value);else EXK.delete(c.value);exRender()});
+$("exFrom").addEventListener("input",exRender);$("exTo").addEventListener("input",exRender);
+function exProg(t,r){$("exMsg").textContent=t;$("exProg").hidden=false;$("exBar").style.width=Math.round((r||0)*100)+"%"}
+$("exGo").addEventListener("click",async()=>{const items=exItems();if(!items.length||BUSY||AIBUSY)return;
+BUSY=true;$("exGo").disabled=true;$("exBack").disabled=true;clearFiles($("exFiles"));$("exMsg").classList.remove("ng");
+const base="施工写真台帳_"+(fsafe(PJ.name)||"工事")+"_"+today8();
+try{if(FMT!=="xlsx"){const b=await makePDF(items,(t,r)=>exProg(t,FMT==="both"?r*0.5:r));fileItem($("exFiles"),b,base+".pdf")}
+if(FMT!=="pdf"){const b=await makeXLSX(items,(t,r)=>exProg(t,FMT==="both"?0.5+r*0.5:r));fileItem($("exFiles"),b,base+".xlsx")}
+exProg("できました。「共有・保存」から「ファイルに保存」やLINE・メールに送れます。",1)}
+catch(e){console.error(e);$("exMsg").textContent="作成できませんでした: "+(e&&e.message||e);$("exMsg").classList.add("ng")}
+finally{BUSY=false;$("exBack").disabled=false;exRender()}});
+
+/* ===== 出力: PDF =====
+   A4縦(210×297mm)に3枚。1ページずつキャンバスに描いて画像にし、jsPDFでPDFにまとめる(日本語フォントを埋め込まなくてよい) */
+const PX=7; /* 1mmあたりのピクセル(約180dpi) */
+const CFONT='"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic",sans-serif';
+const ROWS=[["no","No.",8],["date","撮影日",8],["kubun","写真区分",8],["koshu","工種",8],["shubetsu","種別",8],["basho","撮影箇所",10],["naiyo","内容",17],["biko","備考",17]];
+const LY={ml:12,y0:23,bh:84,gap:4,pw:112,tx:127,tw:71,lw:16};
+async function fontsReady(){try{await Promise.all([document.fonts.load('16px "BIZ UDPGothic"',"台帳"),document.fonts.load('bold 16px "BIZ UDPGothic"',"台帳")])}catch(e){}}
+function cell(p,k,no){if(k==="no")return String(no);if(k==="date")return fmtDate(p.date);return (p[k]||"").trim()}
+function setF(x,mm,bold){x.font=(bold?"bold ":"")+(mm*PX).toFixed(1)+"px "+CFONT}
+function lineMM(x,x1,y1,x2,y2,w,col){x.strokeStyle=col||"#7d8a97";x.lineWidth=Math.max(1,w*PX);x.beginPath();x.moveTo(x1*PX,y1*PX);x.lineTo(x2*PX,y2*PX);x.stroke()}
+function rectMM(x,rx,ry,rw,rh,w,col){x.strokeStyle=col||"#3a4652";x.lineWidth=Math.max(1,w*PX);x.strokeRect(rx*PX,ry*PX,rw*PX,rh*PX)}
+/* 1行に収める。入らなければ文字を小さくし、それでも入らなければ「…」で切る */
+function fitText(x,t,px,py,maxW,mm,minmm,bold){t=String(t||"");let s=mm;setF(x,s,bold);
+while(x.measureText(t).width>maxW&&s>minmm){s=Math.max(minmm,s-0.2);setF(x,s,bold)}
+if(x.measureText(t).width>maxW){while(t.length>1&&x.measureText(t+"…").width>maxW)t=t.slice(0,-1);t+="…"}x.fillText(t,px,py)}
+const KIN="、。,.)）」』】!！?？・ー";
+function wrapLines(x,t,maxW){const out=[];String(t||"").split(/\n/).forEach(par=>{let line="";
+for(const ch of par){if(line&&x.measureText(line+ch).width>maxW&&KIN.indexOf(ch)<0){out.push(line);line=ch===" "||ch==="　"?"":ch}else line+=ch}out.push(line)});return out}
+/* 枠の中に折り返して書く。入らなければ少し小さくし、それでも入らなければ最後の行を「…」で切る */
+function wrapText(x,t,px,py,maxW,hmm,mm,minmm){let s=mm,lines;
+for(;;){setF(x,s);lines=wrapLines(x,t,maxW);if(lines.length*s*1.32<=hmm||s<=minmm)break;s=Math.max(minmm,s-0.2)}
+const lh=s*1.32,max=Math.max(1,Math.floor(hmm/lh));
+if(lines.length>max){lines=lines.slice(0,max);let l=lines[max-1];while(l.length>1&&x.measureText(l+"…").width>maxW)l=l.slice(0,-1);lines[max-1]=l+"…"}
+lines.forEach((l,i)=>x.fillText(l,px,py+(i+0.5)*lh*PX))}
+async function drawBlock(x,p,no,y){const bx=LY.ml,bw=LY.pw,bh=LY.bh;
+x.fillStyle="#f3f5f7";x.fillRect(bx*PX,y*PX,bw*PX,bh*PX);
+const img=await DB.img(p.id);
+if(img){const im=await loadImg(img);try{const r=Math.min(bw*PX/im.naturalWidth,bh*PX/im.naturalHeight),w=im.naturalWidth*r,h=im.naturalHeight*r;
+x.imageSmoothingQuality="high";x.drawImage(im,bx*PX+(bw*PX-w)/2,y*PX+(bh*PX-h)/2,w,h)}finally{freeImg(im)}}
+rectMM(x,bx,y,bw,bh,0.25);
+let ry=y;const vx=LY.tx+LY.lw+1.8,vw=(LY.tw-LY.lw-3.4)*PX;
+ROWS.forEach(([k,lab,h],i)=>{x.fillStyle="#eaf0f5";x.fillRect(LY.tx*PX,ry*PX,LY.lw*PX,h*PX);
+x.fillStyle="#1d2a36";x.textAlign="left";x.textBaseline="middle";fitText(x,lab,(LY.tx+1.6)*PX,(ry+h/2)*PX,(LY.lw-2.6)*PX,2.7,2.2,true);
+x.fillStyle="#111";const v=cell(p,k,no);
+if(h<=10)fitText(x,v,vx*PX,(ry+h/2)*PX,vw,3.2,2.4,k==="no");else wrapText(x,v,vx*PX,(ry+1.2)*PX,vw,h-2.4,3.0,2.4);
+if(i<ROWS.length-1)lineMM(x,LY.tx,ry+h,LY.tx+LY.tw,ry+h,0.12);ry+=h});
+lineMM(x,LY.tx+LY.lw,y,LY.tx+LY.lw,y+bh,0.12);rectMM(x,LY.tx,y,LY.tw,bh,0.25)}
+async function drawPage(cv,items,startNo,pi,pn){cv.width=210*PX;cv.height=297*PX;const x=cv.getContext("2d");
+x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);x.textBaseline="middle";x.fillStyle="#111";
+const nm=(PJ.name||"").trim(),sub=[(PJ.place||"").trim(),(PJ.company||"").trim()].filter(Boolean).join("  ");
+x.textAlign="left";fitText(x,"施工写真台帳",LY.ml*PX,14.2*PX,40*PX,3.0,2.4,false);
+x.textAlign="left";fitText(x,nm?"工事名  "+nm:"工事名",LY.ml*PX,18.3*PX,(sub?120:186)*PX,4.0,3.0,true);
+if(sub){x.textAlign="right";fitText(x,sub,(210-LY.ml)*PX,18.3*PX,64*PX,3.0,2.4,false)}
+lineMM(x,LY.ml,20.8,210-LY.ml,20.8,0.35,"#3a4652");
+for(let k=0;k<items.length;k++)await drawBlock(x,items[k],startNo+k,LY.y0+k*(LY.bh+LY.gap));
+x.fillStyle="#555";x.textAlign="center";setF(x,2.8);x.fillText((pi+1)+" / "+pn,105*PX,290.5*PX)}
+async function makePDF(items,prog){prog("PDFの部品を読み込み中…",0);await need("pdf");await fontsReady();
+const {jsPDF}=window.jspdf,doc=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true}),cv=document.createElement("canvas"),pn=Math.ceil(items.length/3);
+for(let i=0;i<pn;i++){prog("PDFを作成中… "+(i+1)+" / "+pn+"ページ",i/pn);
+await drawPage(cv,items.slice(i*3,i*3+3),i*3+1,i,pn);
+const u=cv.toDataURL("image/jpeg",0.88);if(i)doc.addPage("a4","portrait");doc.addImage(u,"JPEG",0,0,210,297,undefined,"FAST");await sleep(0)}
+cv.width=cv.height=0;doc.setProperties({title:"施工写真台帳 "+(PJ.name||""),creator:"施工写真台帳"});prog("PDFを仕上げ中…",1);
+return doc.output("blob")}
+
+/* ===== 出力: Excel =====
+   「写真台帳」シート: PDFと同じく1ページ3枚(A列に写真、C・D列に項目)。印刷はA4縦・100%・改ページ入り。
+   「一覧」シート: 写真なしの表(並べ替え・編集用) */
+const XROW=[17,17,17,17,17,21.3,36.2,36.2].map(v=>v*1.3333); /* 行の高さ(pt)。合計約238pt=84mm */
+async function xImg(blob){const im=await loadImg(blob);try{const r=await resize(im,1000,0.8);return {url:await blobToDataURL(r.blob),w:r.w,h:r.h}}finally{freeImg(im)}}
+async function makeXLSX(items,prog){prog("Excelの部品を読み込み中…",0);await need("xlsx");
+const wb=new ExcelJS.Workbook();wb.creator="施工写真台帳";wb.created=new Date();
+const FN="游ゴシック",bd={style:"thin",color:{argb:"FF7D8A97"}},bdo={style:"thin",color:{argb:"FF3A4652"}};
+const ws=wb.addWorksheet("写真台帳",{views:[{showGridLines:false}],
+pageSetup:{paperSize:9,orientation:"portrait",scale:100,fitToPage:false,horizontalCentered:true,margins:{left:0.4,right:0.4,top:0.4,bottom:0.45,header:0.2,footer:0.2}},
+headerFooter:{oddFooter:"&C&P / &N"}});
+/* 列の幅: A=写真(約104mm) B=すき間 C=項目名 D=値。合計約172mmにして、Excel・Numbers・LibreOfficeのどれでもA4の幅に収まるよう余裕をとる */
+ws.columns=[{width:56.2},{width:1.1},{width:8.6},{width:27}];
+const nm=(PJ.name||"").trim(),sub=[(PJ.place||"").trim(),(PJ.company||"").trim()].filter(Boolean).join("  ");
+const r1=ws.getRow(1);r1.height=24;
+ws.getCell("A1").value=nm?"工事名  "+nm:"工事名";ws.getCell("A1").font={name:FN,size:12,bold:true};ws.getCell("A1").alignment={vertical:"bottom"};
+ws.mergeCells("B1:D1");ws.getCell("B1").value=sub;ws.getCell("B1").font={name:FN,size:9};ws.getCell("B1").alignment={horizontal:"right",vertical:"bottom",shrinkToFit:true};
+["A1","B1"].forEach(a=>{ws.getCell(a).border={bottom:{style:"medium",color:{argb:"FF3A4652"}}}});
+ws.pageSetup.printTitlesRow="1:1";
+const COLW=7*56.2,BOXH=XROW.reduce((a,b)=>a+b,0)/0.75; /* 写真の枠(px) */
+let r=2;
+for(let k=0;k<items.length;k++){const p=items[k];prog("Excelを作成中… "+(k+1)+" / "+items.length+"枚",k/items.length);
+if(k>0){if(k%3===0)ws.getRow(r-1).addPageBreak();else{ws.getRow(r).height=11.3;r++}}
+const r0=r;
+ROWS.forEach(([key,lab],i)=>{const row=ws.getRow(r0+i);row.height=XROW[i];
+const c=row.getCell(3),v=row.getCell(4);c.value=lab;c.font={name:FN,size:8,bold:true};c.alignment={vertical:"middle",horizontal:"left",indent:0};
+c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFEAF0F5"}};
+const val=cell(p,key,k+1),ln=val.length;v.value=val;
+/* 内容・備考が長いときは文字を小さくして枠に収める */
+v.font={name:FN,size:i>=6?(ln>66?7:ln>44?8:9):9,bold:key==="no"};v.alignment={vertical:i>=6?"top":"middle",wrapText:i>=5,shrinkToFit:i<5};
+const top=i===0?bdo:bd,bot=i===ROWS.length-1?bdo:bd;c.border={top,bottom:bot,left:bdo,right:bd};v.border={top,bottom:bot,left:bd,right:bdo}});
+ws.mergeCells(r0,1,r0+ROWS.length-1,1);ws.getCell(r0,1).border={top:bdo,left:bdo,bottom:bdo,right:bdo};
+const blob=await DB.img(p.id);
+if(blob){const im=await xImg(blob),id=wb.addImage({base64:im.url,extension:"jpeg"});
+const s=Math.min((COLW-6)/im.w,(BOXH-6)/im.h),iw=Math.round(im.w*s),ih=Math.round(im.h*s);
+let dy=(BOXH-ih)/2*0.75,ri=0;while(ri<XROW.length-1&&dy>XROW[ri]){dy-=XROW[ri];ri++}
+ws.addImage(id,{tl:{nativeCol:0,nativeColOff:Math.round((COLW-iw)/2*9525),nativeRow:r0-1+ri,nativeRowOff:Math.round(dy*12700)},ext:{width:iw,height:ih},editAs:"oneCell"})}
+r=r0+ROWS.length;if(k%5===4)await sleep(0)}
+/* 一覧シート */
+const w2=wb.addWorksheet("一覧",{views:[{state:"frozen",ySplit:1}],pageSetup:{paperSize:9,orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.3,footer:0.3},printTitlesRow:"1:1"}});
+w2.columns=[{header:"No.",key:"no",width:6},{header:"撮影日",key:"date",width:12},{header:"写真区分",key:"kubun",width:11},{header:"工種",key:"koshu",width:18},{header:"種別",key:"shubetsu",width:16},{header:"撮影箇所",key:"basho",width:16},{header:"内容",key:"naiyo",width:30},{header:"備考",key:"biko",width:36},{header:"黒板の文字",key:"board",width:36}];
+items.forEach((p,i)=>w2.addRow({no:i+1,date:fmtDate(p.date),kubun:p.kubun||"",koshu:p.koshu||"",shubetsu:p.shubetsu||"",basho:p.basho||"",naiyo:p.naiyo||"",biko:p.biko||"",board:p.board||""}));
+w2.eachRow((row,n)=>{row.eachCell(c=>{c.font={name:FN,size:10,bold:n===1};c.alignment={vertical:"top",wrapText:true};c.border={bottom:{style:"hair",color:{argb:"FFB8C2CC"}}};if(n===1)c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFE3EAF1"}}})});
+w2.autoFilter={from:{row:1,column:1},to:{row:1,column:9}};
+prog("Excelを仕上げ中…",1);const buf=await wb.xlsx.writeBuffer();
+return new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
+
+/* ===== 設定 ===== */
+function openSt(){flush();$("s-name").value=PJ.name||"";$("s-place").value=PJ.place||"";$("s-company").value=PJ.company||"";
+keyShow();$("aiKMsg").textContent="";$("aiKMsg").classList.remove("ng");$("bkMsg").textContent="";clearFiles($("bkFiles"));thShow();usage();openSheet("st")}
+$("stBtn").addEventListener("click",openSt);
+$("stBack").addEventListener("click",()=>{closeSheet("st");renderAll()});
+document.querySelectorAll("#st [data-p]").forEach(el=>el.addEventListener("input",()=>{PJ[el.dataset.p]=el.value;pjSave()}));
+$("pjAdd").addEventListener("click",async()=>{await addProject();openSt();$("s-name").focus()});
+$("pjDel").addEventListener("click",async()=>{if(!confirm("「"+(PJ.name||"工事名なし")+"」と写真"+PH.length+"枚を、この端末から削除します。元に戻せません。よろしいですか?"))return;
+try{await DB.delProject(PJ.id,PH.map(p=>p.id))}catch(e){ban("削除できませんでした: "+e.message);return}
+PJS=PJS.filter(p=>p!==PJ);if(!PJS.length){const p=newProject("");await DB.put("projects",p);PJS.push(p)}
+await switchPj(PJS[PJS.length-1].id);openSt()});
+function keyShow(){const k=keyGet(),i=$("aiKey");i.value="";i.placeholder=k?"保存済み(…"+k.slice(-4)+")":"APIキーを貼り付け";$("aiDel").hidden=!k}
+$("aiSave").addEventListener("click",()=>{const v=$("aiKey").value.replace(/\s+/g,"");const m=$("aiKMsg");m.classList.remove("ng");
+if(!v){m.textContent="キーが入っていません。貼り付けてから「保存」を押してください。";return}keySet(v);keyShow();m.textContent="保存しました。";renderList()});
+$("aiKey").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();$("aiSave").click()}});
+$("aiDel").addEventListener("click",()=>{if(!confirm("この端末からAPIキーを消します。電圧降下・電線管アプリでも使えなくなります。よろしいですか?"))return;keySet("");keyShow();$("aiKMsg").textContent="この端末からキーを消しました。"});
+async function usage(){try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();$("usage").textContent="この端末で使っている容量: 約"+sizeStr(e.usage||0)}}catch(e){}}
+/* バックアップ: 工事1つ分を写真ごとJSONに */
+$("bkOut").addEventListener("click",async()=>{if(BUSY)return;BUSY=true;const m=$("bkMsg");m.classList.remove("ng");clearFiles($("bkFiles"));
+try{const photos=[];for(let i=0;i<PH.length;i++){m.textContent="書き出し中… "+(i+1)+" / "+PH.length;const p=PH[i],img=await DB.img(p.id);
+const o={};Object.keys(p).forEach(k=>{if(k!=="thumb")o[k]=p[k]});o.img=img?await blobToDataURL(img):"";photos.push(o)}
+const data={app:"photo-ledger",v:1,at:new Date().toISOString(),project:{name:PJ.name||"",place:PJ.place||"",company:PJ.company||""},photos};
+const b=new Blob([JSON.stringify(data)],{type:"application/json"});
+fileItem($("bkFiles"),b,"写真台帳バックアップ_"+(fsafe(PJ.name)||"工事")+"_"+today8()+".json");m.textContent="できました。「共有・保存」から「ファイルに保存」などで保存してください。"}
+catch(e){m.textContent="書き出せませんでした: "+e.message;m.classList.add("ng")}finally{BUSY=false}});
+$("bkIn").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f||BUSY)return;BUSY=true;const m=$("bkMsg");m.classList.remove("ng");
+try{m.textContent="読み込み中…";const o=JSON.parse(await f.text());if(!o||o.app!=="photo-ledger"||!Array.isArray(o.photos))throw new Error("写真台帳のバックアップファイルではないようです");
+const pj=newProject((o.project&&o.project.name||"")+"(読み込み)");pj.place=o.project&&o.project.place||"";pj.company=o.project&&o.project.company||"";
+await DB.put("projects",pj);PJS.push(pj);let n=0;
+for(let i=0;i<o.photos.length;i++){m.textContent="読み込み中… "+(i+1)+" / "+o.photos.length;const s=o.photos[i];if(!s||!s.img)continue;
+try{const blob=await dataURLToBlob(s.img),im=await loadImg(blob);let th;try{th=await resize(im,360,0.72)}finally{freeImg(im)}
+const p={};["w","h","date","time","dateSrc","kubun","koshu","shubetsu","basho","naiyo","biko","board","ai","aiErr","aiModel","aiAt"].forEach(k=>{if(s[k]!=null)p[k]=s[k]});
+FL.forEach(([k])=>{p[k]=String(p[k]||"")});p.board=String(p.board||"");
+p.id=uid();p.pj=pj.id;p.created=stamp();p.thumb=th.blob;p.man=s.man&&typeof s.man==="object"?s.man:{};await DB.addPhoto(p,blob);n++}catch(err){console.warn(err)}}
+await switchPj(pj.id);openSt();$("bkMsg").textContent="「"+pj.name+"」として写真"+n+"枚を読み込みました。"}
+catch(err){m.textContent="読み込めませんでした: "+err.message;m.classList.add("ng")}finally{BUSY=false}});
+/* テーマ(電圧降下アプリと共通の app-theme) */
+function thCur(){const t=ls("app-theme");return t==="light"||t==="dark"?t:"auto"}
+function thShow(){const t=thCur();document.querySelectorAll("#thSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.th===t)))}
+$("thSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const t=b.dataset.th;
+if(t==="auto"){ls("app-theme",null);document.documentElement.removeAttribute("data-theme")}else{ls("app-theme",t);document.documentElement.setAttribute("data-theme",t)}thShow()});
+
+/* ===== 起動 ===== */
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush()});
+window.addEventListener("pagehide",flush);
+async function init(){try{PJS=await DB.all("projects")}catch(e){$("bootMsg").textContent="このブラウザでは写真を保存できません(プライベートブラウズでは使えません)。";$("bootMsg").classList.add("ng");return}
+if(!PJS.length){const p=newProject("");await DB.put("projects",p);PJS=[p]}
+PJS.sort((a,b)=>a.created-b.created);const last=ls("pl-cur");PJ=PJS.find(p=>p.id===last)||PJS[PJS.length-1];
+await loadPhotos();renderAll()}
+init();
+if("serviceWorker" in navigator&&location.protocol==="https:")window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})});
+})();
+</script>
+</body>
+</html>
