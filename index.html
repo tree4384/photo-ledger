@@ -301,7 +301,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v5</p>
+<p class="note" style="text-align:center">施工写真台帳 v6</p>
 </div>
 </div>
 
@@ -402,7 +402,9 @@ const kt=(x,y)=>kIdx(x)-kIdx(y);
 if(SORT==="date")list.sort(bd);else if(SORT==="add")list.sort((x,y)=>x.created-y.created);
 else if(SORT==="basho")list.sort((x,y)=>pi(x)-pi(y)||kt(x,y)||bd(x,y));else list.sort((x,y)=>ki(x)-ki(y)||kt(x,y)||bd(x,y));
 return list}
-function thumbURL(p){let u=THU.get(p.id);if(!u&&p.thumb){u=URL.createObjectURL(p.thumb);THU.set(p.id,u)}return u||""}
+/* サムネイルは ArrayBuffer(p.tb)で保存し、表示のたびにメモリ上の Blob を作る。
+   iPhoneのSafariでは、IndexedDBから読んだ Blob をそのまま使うと、写真の情報を保存し直したときに表示が壊れるため */
+function thumbURL(p){let u=THU.get(p.id);if(!u&&p.tb&&p.tb.byteLength){u=URL.createObjectURL(new Blob([p.tb],{type:"image/jpeg"}));THU.set(p.id,u)}return u||""}
 function dropThumb(id){const u=THU.get(id);if(u){URL.revokeObjectURL(u);THU.delete(id)}}
 function gmode(){return SORT==="basho"?"basho":"koshu"}
 function gkey(p,mode){mode=mode||gmode();return mode==="basho"?((p.basho||"").trim()||"撮影箇所なし"):((p.koshu||"").trim()||"工種未入力")}
@@ -444,7 +446,17 @@ $("banX").addEventListener("click",banOff);
 
 /* ===== 工事 ===== */
 function newProject(name){return {id:uid(),name:name||"",place:"",company:"",created:stamp()}}
-async function loadPhotos(){THU.forEach(u=>URL.revokeObjectURL(u));THU.clear();PH=await DB.byPj(PJ.id);PH.forEach(p=>{p.man=p.man||{}})}
+async function loadPhotos(){THU.forEach(u=>URL.revokeObjectURL(u));THU.clear();PH=await DB.byPj(PJ.id);PH.forEach(p=>{p.man=p.man||{}});
+/* 古い形(Blobのサムネイル)や、壊れたサムネイルを直す */
+const fix=PH.filter(p=>!(p.tb&&p.tb.byteLength));
+for(let i=0;i<fix.length;i++){if(fix.length>3)$("bootMsg").textContent="写真の表示を整えています… "+(i+1)+" / "+fix.length;await fixThumb(fix[i])}
+$("bootMsg").textContent=""}
+async function fixThumb(p){let buf=null;
+if(p.thumb&&typeof p.thumb.arrayBuffer==="function"){try{buf=await p.thumb.arrayBuffer();if(!buf||!buf.byteLength)buf=null}catch(e){buf=null}}
+if(buf){try{const im=await loadImg(new Blob([buf],{type:"image/jpeg"}));freeImg(im)}catch(e){buf=null}}
+/* サムネイルが読めなければ、写真本体から作り直す */
+if(!buf){try{const img=await DB.img(p.id);if(img){const im=await loadImg(img);try{const th=await resize(im,360,0.72);buf=await th.blob.arrayBuffer()}finally{freeImg(im)}}}catch(e){console.warn(e)}}
+delete p.thumb;if(buf)p.tb=buf;try{await DB.put("photos",p)}catch(e){}}
 async function switchPj(id){const p=PJS.find(x=>x.id===id);if(!p)return;if(SEL)selEnd();if(DEL.length)await commitDel();PJ=p;ls("pl-cur",p.id);await loadPhotos();renderAll()}
 async function addProject(){const p=newProject("");await DB.put("projects",p);PJS.push(p);await switchPj(p.id);return p}
 let pjT=null;
@@ -475,7 +487,8 @@ else ban(m,null,4000)}
 async function addOne(f){let dt=null;try{dt=exifDate(await f.slice(0,262144).arrayBuffer())}catch(e){}
 const im=await loadImg(f);
 try{const big=await resize(im,1600,0.85),th=await resize(im,360,0.72),d=dt||fileDate(f);
-const p={id:uid(),pj:PJ.id,created:stamp(),w:big.w,h:big.h,thumb:th.blob,date:d.date,time:d.time,dateSrc:dt?"exif":"file",
+const tb=await th.blob.arrayBuffer();
+const p={id:uid(),pj:PJ.id,created:stamp(),w:big.w,h:big.h,tb,date:d.date,time:d.time,dateSrc:dt?"exif":"file",
 koutei:"",kubun:"",koshu:"",shubetsu:"",basho:"",naiyo:"",biko:"",board:"",ai:"",aiErr:"",man:{}};
 await DB.addPhoto(p,big.blob);PH.push(p);return p}
 finally{freeImg(im)}}
@@ -898,7 +911,7 @@ async function usage(){try{if(navigator.storage&&navigator.storage.estimate){con
 /* バックアップ: 工事1つ分を写真ごとJSONに */
 $("bkOut").addEventListener("click",async()=>{if(BUSY)return;BUSY=true;const m=$("bkMsg");m.classList.remove("ng");clearFiles($("bkFiles"));
 try{const photos=[];for(let i=0;i<PH.length;i++){m.textContent="書き出し中… "+(i+1)+" / "+PH.length;const p=PH[i],img=await DB.img(p.id);
-const o={};Object.keys(p).forEach(k=>{if(k!=="thumb")o[k]=p[k]});o.img=img?await blobToDataURL(img):"";photos.push(o)}
+const o={};Object.keys(p).forEach(k=>{if(k!=="thumb"&&k!=="tb")o[k]=p[k]});o.img=img?await blobToDataURL(img):"";photos.push(o)}
 const data={app:"photo-ledger",v:1,at:new Date().toISOString(),project:{name:PJ.name||"",place:PJ.place||"",company:PJ.company||"",places:PJ.places||[],koshus:PJ.koshus||[]},photos};
 const b=new Blob([JSON.stringify(data)],{type:"application/json"});
 fileItem($("bkFiles"),b,"写真台帳バックアップ_"+(fsafe(PJ.name)||"工事")+"_"+today8()+".json");m.textContent="できました。「共有・保存」から「ファイルに保存」などで保存してください。"}
@@ -911,7 +924,7 @@ for(let i=0;i<o.photos.length;i++){m.textContent="読み込み中… "+(i+1)+" /
 try{const blob=await dataURLToBlob(s.img),im=await loadImg(blob);let th;try{th=await resize(im,360,0.72)}finally{freeImg(im)}
 const p={};["w","h","date","time","dateSrc","koutei","kubun","koshu","shubetsu","basho","naiyo","biko","board","ai","aiErr","aiModel","aiAt"].forEach(k=>{if(s[k]!=null)p[k]=s[k]});
 FL.forEach(([k])=>{p[k]=String(p[k]||"")});p.board=String(p.board||"");
-p.id=uid();p.pj=pj.id;p.created=stamp();p.thumb=th.blob;p.man=s.man&&typeof s.man==="object"?s.man:{};await DB.addPhoto(p,blob);n++}catch(err){console.warn(err)}}
+p.id=uid();p.pj=pj.id;p.created=stamp();p.tb=await th.blob.arrayBuffer();p.man=s.man&&typeof s.man==="object"?s.man:{};await DB.addPhoto(p,blob);n++}catch(err){console.warn(err)}}
 await switchPj(pj.id);openSt();$("bkMsg").textContent="「"+pj.name+"」として写真"+n+"枚を読み込みました。"}
 catch(err){m.textContent="読み込めませんでした: "+err.message;m.classList.add("ng")}finally{BUSY=false}});
 /* テーマ(電圧降下アプリと共通の app-theme) */
