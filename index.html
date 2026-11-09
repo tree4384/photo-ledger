@@ -59,7 +59,8 @@ label.l{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px;font-wei
 .seg button:first-child{border-left:0}
 .seg button[aria-pressed="true"]{background:var(--acc);color:var(--on-acc);font-weight:700}
 .tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 10px}
-.tools .seg{flex:1;min-width:240px;max-width:420px}
+.tools .seg{flex:1;min-width:280px;max-width:480px}
+.tools .seg button{padding:8px 2px}
 .tools .note{margin:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px}
 .gh{grid-column:1/-1;font-weight:700;font-size:15px;margin:10px 2px -2px;display:flex;gap:8px;align-items:baseline;border-bottom:2px solid var(--line);padding-bottom:4px}
@@ -81,6 +82,7 @@ label.l{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px;font-wei
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);
 padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 .bar .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:8px}
+#barSel{max-width:980px;margin:0 auto}
 .bar .btn{padding:10px 4px;font-size:14px;min-height:48px;position:relative}
 .ban{position:fixed;left:12px;right:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:25;max-width:640px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 10px 10px 14px;display:flex;gap:8px;align-items:center;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.22)}
 .ban .msg{flex:1}
@@ -99,6 +101,33 @@ padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-ri
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 .row2>div{min-width:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.pjc details{margin-top:2px}
+.pjc summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 2px 0;font-weight:700;font-size:14px;-webkit-tap-highlight-color:transparent}
+.pjc summary::-webkit-details-marker{display:none}
+.pjc summary .note{margin:0;font-weight:400;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pjc summary svg{width:18px;height:18px;color:var(--sub);transition:transform .2s;flex:none}
+.pjc details[open] summary svg{transform:rotate(180deg)}
+.pjc details[open] summary .note{visibility:hidden}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{appearance:none;font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 13px;min-height:38px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.opt[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--on-acc);font-weight:700}
+.opt.keep{color:var(--sub)}.opt.keep[aria-pressed="true"]{color:var(--on-acc)}
+.pc{display:inline-flex;align-items:center}
+.pc .rm{appearance:none;border:0;background:transparent;color:var(--sub);font-size:17px;line-height:1;padding:6px 6px 6px 3px;cursor:pointer}
+.tools2{display:flex;align-items:center;gap:10px;margin:-2px 0 10px}
+.tools2 .note{margin:0;flex:1}
+.ph .ck{position:absolute;right:7px;bottom:7px;width:30px;height:30px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.35);display:none;place-items:center;color:#fff;font-size:17px;font-weight:700;line-height:1}
+.selmode .ph .ck{display:grid}
+.ph.on{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc)}
+.ph.on .ck{background:var(--acc);border-color:var(--acc)}
+.gh .gall{display:none;margin-left:auto;appearance:none;border:1px solid var(--line);background:var(--card);color:var(--acc);font:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:3px 10px;cursor:pointer}
+.selmode .gh .gall{display:inline-block}
+.selmode .tools,.selmode .tools2,.selmode .pjc{opacity:.45;pointer-events:none}
+#barSel .msg{font-size:14px;line-height:1.45;margin:0 0 8px;font-weight:700}
+#barSel .msg span{font-weight:400;color:var(--sub)}
+#barSel .row{display:grid;grid-template-columns:1fr 1.6fr;gap:8px}
+html.selmode body{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
+html.selmode .ban{bottom:calc(128px + env(safe-area-inset-bottom,0px))}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;background:var(--card);cursor:pointer;user-select:none}
 .chip input{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--acc)}
 .chip .note{margin:0}
@@ -122,60 +151,83 @@ a{color:var(--acc)}
 <button type="button" class="ib" id="stBtn" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </header>
 
-<section class="card">
+<section class="card pjc">
 <select id="pjSel" aria-label="工事を選ぶ"></select>
-<div id="pjNameCard" hidden>
-<label class="l" for="pjName">工事名</label>
-<input id="pjName" type="text" autocomplete="off" placeholder="例: ○○ビル改修電気設備工事">
-<p class="note">台帳の上に入ります。工事場所・施工者は右上の設定から入れられます。</p>
+<details id="pjInfo">
+<summary><span>工事情報</span><span class="note" id="pjSum"></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+<label class="l" for="p-name">工事名</label><input type="text" id="p-name" data-p="name" autocomplete="off" placeholder="例: ○○ビル改修電気設備工事">
+<div class="row2">
+<div><label class="l" for="p-place">工事場所</label><input type="text" id="p-place" data-p="place" autocomplete="off" placeholder="例: 東京都○○区"></div>
+<div><label class="l" for="p-company">施工者</label><input type="text" id="p-company" data-p="company" autocomplete="off" placeholder="会社名"></div>
 </div>
+<p class="note">工事名・工事場所・施工者は台帳の上に入ります。</p>
+<div class="btns"><button type="button" class="btn sm danger" id="pjDel">この工事を削除</button></div>
+</details>
 </section>
 
 <div class="tools">
-<div class="seg" id="sortSeg" role="group" aria-label="並べ方"><button type="button" data-s="koshu">工種ごと</button><button type="button" data-s="date">日付順</button><button type="button" data-s="add">追加順</button></div>
-<p class="note" id="stats"></p>
+<div class="seg" id="sortSeg" role="group" aria-label="並べ方"><button type="button" data-s="koshu">工種別</button><button type="button" data-s="basho">場所別</button><button type="button" data-s="date">日付順</button><button type="button" data-s="add">追加順</button></div>
 </div>
+<div class="tools2"><p class="note" id="stats"></p><button type="button" class="btn sm" id="aiBtn" hidden>AIで仕分け</button></div>
 
 <div class="grid" id="grid"></div>
 <div class="card empty" id="empty" hidden>
 <p><b>まだ写真がありません</b></p>
-<p class="note">下の「写真を追加」から、撮った写真を選ぶか、その場で撮影してください。AIが写真や黒板の文字から工種・内容などを入れて、工種ごと・日付順に並べます。</p>
+<p class="note">下の「写真を追加」から、撮った写真を選ぶか、その場で撮影してください。取り込むとAIが写真や黒板の文字から自動で仕分けして(工種・工程・撮影箇所・内容など)、工種ごと・工程順に並べます。</p>
 </div>
 <p class="note" id="bootMsg"></p>
 </main>
 
 <div class="ban" id="ban" role="status" hidden><span class="msg" id="banMsg"></span><button type="button" id="banAct" hidden></button><button type="button" class="x" id="banX" aria-label="閉じる">×</button></div>
 
-<nav class="bar"><div class="in">
+<nav class="bar"><div class="in" id="barMain">
 <label class="btn pri" id="addBtn">＋ 写真を追加<input type="file" id="fileIn" class="vh" accept="image/*" multiple></label>
-<button type="button" class="btn" id="aiBtn">AIで入力</button>
+<button type="button" class="btn" id="asBtn">振り分け</button>
 <button type="button" class="btn" id="exBtn">台帳を出力</button>
-</div></nav>
+</div>
+<div id="barSel" hidden><p class="msg" id="selMsg"></p><div class="row"><button type="button" class="btn" id="selCancel">やめる</button><button type="button" class="btn pri" id="selApply">反映する</button></div></div>
+</nav>
 
 <!-- 写真の編集 -->
 <div class="sheet" id="ed" hidden>
 <div class="sh-h"><button type="button" class="btn sm" id="edBack">‹ 一覧</button><h2 id="edTitle"></h2><button type="button" class="btn sm" id="edPrev" aria-label="前の写真">◀</button><button type="button" class="btn sm" id="edNext" aria-label="次の写真">▶</button></div>
 <div class="sh-b">
 <div class="edimg"><img id="edImg" alt="写真"></div>
-<div class="aibar"><button type="button" class="btn pri" id="edAi">AIで入力</button><p class="note" id="edAiSt"></p></div>
+<div class="aibar"><button type="button" class="btn pri" id="edAi">AIで入れ直す</button><p class="note" id="edAiSt"></p></div>
 <p class="note" id="edMsg" role="status"></p>
 <div class="row2">
 <div><label class="l" for="f-date">撮影日</label><input type="date" id="f-date" data-f="date"></div>
+<div><label class="l" for="f-basho">撮影箇所</label><input type="text" id="f-basho" data-f="basho" list="dl-basho" autocomplete="off" placeholder="例: 3階 事務室"></div>
+</div>
+<div class="row2">
+<div><label class="l" for="f-koutei">工程</label><select id="f-koutei" data-f="koutei"></select></div>
 <div><label class="l" for="f-kubun">写真区分</label><select id="f-kubun" data-f="kubun"></select></div>
 </div>
 <div class="row2">
 <div><label class="l" for="f-koshu">工種</label><input type="text" id="f-koshu" data-f="koshu" list="dl-koshu" autocomplete="off"></div>
 <div><label class="l" for="f-shubetsu">種別</label><input type="text" id="f-shubetsu" data-f="shubetsu" list="dl-shu" autocomplete="off"></div>
 </div>
-<label class="l" for="f-basho">撮影箇所</label><input type="text" id="f-basho" data-f="basho" list="dl-basho" autocomplete="off" placeholder="例: 3階 事務室">
 <label class="l" for="f-naiyo">内容</label><input type="text" id="f-naiyo" data-f="naiyo" autocomplete="off" placeholder="例: 天井内 PF管φ22 隠ぺい配管">
 <label class="l" for="f-biko">備考</label><textarea id="f-biko" data-f="biko" rows="2"></textarea>
 <label class="l" for="f-board">黒板の文字(AIが読み取ったもの・台帳には出ません)</label><textarea id="f-board" data-f="board" rows="2"></textarea>
-<p class="note">自分で書き換えた欄は、AIで入力し直しても上書きされません(空にすると、またAIが入れます)。</p>
+<p class="note">工程を選ぶと、写真区分と種別もそれに合わせて入ります。自分で書き換えた欄は、AIで入れ直しても上書きされません(空にすると、またAIが入れます)。</p>
 <div class="btns"><button type="button" class="btn danger" id="edDel">この写真を削除</button></div>
 </div>
 </div>
 <datalist id="dl-koshu"></datalist><datalist id="dl-shu"></datalist><datalist id="dl-basho"></datalist>
+
+<!-- まとめて振り分け -->
+<div class="sheet" id="as" hidden>
+<div class="sh-h"><button type="button" class="btn sm" id="asBack">‹ 戻る</button><h2>まとめて振り分け</h2><span class="sp"></span></div>
+<div class="sh-b">
+<p class="note" style="margin:0 0 10px">AIの仕分けを直したいときや、場所・工程をまとめて決めたいときに使います。場所と工程を選んでから、一覧でその写真をタップしてください。</p>
+<section class="card"><h3>① 撮影箇所</h3><div class="opts" id="asPlaces"></div>
+<div class="aikey"><input id="asNew" type="text" placeholder="新しい場所(例: 3階 事務室)" autocomplete="off" enterkeyhint="done"><button type="button" class="btn sm" id="asNewBtn">追加</button></div></section>
+<section class="card"><h3>② 工程</h3><div class="opts" id="asKoutei"></div><p class="note">工程を選ぶと、写真区分と種別もそれに合わせて入ります。</p></section>
+<button type="button" class="btn pri wide" id="asGo">③ 写真を選ぶ</button>
+<p class="note" id="asMsg"></p>
+</div>
+</div>
 
 <!-- 台帳の出力 -->
 <div class="sheet" id="ex" hidden>
@@ -185,7 +237,7 @@ a{color:var(--acc)}
 <div class="seg" id="fmtSeg" role="group" aria-label="形式"><button type="button" data-v="pdf">PDF</button><button type="button" data-v="xlsx">Excel</button><button type="button" data-v="both">両方</button></div>
 <p class="note">A4縦に写真3枚ずつ並べた台帳です。Excelには写真なしの「一覧」シートも付きます。</p></section>
 <section class="card"><h3>出力する写真</h3>
-<p class="note" style="margin-top:0">工種</p>
+<p class="note" style="margin-top:0" id="exKLabel">工種</p>
 <div class="chips" id="exKoshu"></div>
 <div class="row2">
 <div><label class="l" for="exFrom">撮影日(から)</label><input type="date" id="exFrom"></div>
@@ -203,18 +255,11 @@ a{color:var(--acc)}
 <div class="sheet" id="st" hidden>
 <div class="sh-h"><button type="button" class="btn sm" id="stBack">‹ 戻る</button><h2>設定</h2><span class="sp"></span></div>
 <div class="sh-b">
-<section class="card"><h3>工事情報</h3>
-<label class="l" for="s-name">工事名</label><input type="text" id="s-name" data-p="name" autocomplete="off">
-<label class="l" for="s-place">工事場所</label><input type="text" id="s-place" data-p="place" autocomplete="off">
-<label class="l" for="s-company">施工者(会社名)</label><input type="text" id="s-company" data-p="company" autocomplete="off">
-<p class="note">工事名・工事場所・施工者は台帳の上に入ります。</p>
-<div class="btns"><button type="button" class="btn sm" id="pjAdd">＋ 新しい工事</button><button type="button" class="btn sm danger" id="pjDel">この工事を削除</button></div>
-</section>
 <section class="card" id="aiCard"><h3>AI(Gemini)</h3>
 <p class="note">Google AI Studio(<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>)で無料のAPIキーを作って貼り付けてください。キーはこの端末の中だけに保存されます。電圧降下・電線管アプリでキーを保存していれば、そのまま使えます。</p>
 <div class="aikey"><input id="aiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Gemini APIキー"><button type="button" class="btn sm" id="aiSave">保存</button><button type="button" class="btn sm" id="aiDel">消す</button></div>
 <p class="note" id="aiKMsg" role="status"></p>
-<p class="note">AIに送るのは、写真1枚と、この工事で使っている工種・種別の言葉だけです(工事名・会社名は送りません)。無料枠では、送った写真がGoogleのAIの改善に使われることがあります。</p>
+<p class="note">AIに送るのは、写真1枚と、撮影箇所・工程などの欄の言葉だけです(工事名・会社名は送りません)。無料枠では、送った写真がGoogleのAIの改善に使われることがあります。</p>
 </section>
 <section class="card"><h3>データ</h3>
 <p class="note" style="margin-top:0">写真はこのiPhoneのこのアプリの中だけに保存されます。機種変更や万一に備えて、ときどきバックアップを書き出して「ファイル」やGoogleドライブに保存してください。</p>
@@ -226,7 +271,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v1</p>
+<p class="note" style="text-align:center">施工写真台帳 v2</p>
 </div>
 </div>
 
@@ -251,8 +296,16 @@ function sizeStr(n){return n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Ma
 const KUBUN=["着工前","施工状況","使用材料","品質管理","出来形管理","安全管理","完成","その他"];
 /* 工種: 台帳ではこの順に並べる(ここにない工種は後ろに五十音順) */
 const KOSHU=["仮設","電灯設備","コンセント設備","動力設備","幹線設備","受変電設備","発電設備","蓄電池設備","雷保護設備","接地設備","弱電設備","電話・LAN設備","テレビ共聴設備","拡声設備","インターホン設備","監視カメラ設備","防犯・入退室管理設備","自動火災報知設備","非常照明・誘導灯設備","構内配電線路","構内通信線路","撤去"];
-const SHUBETSU=["配管","ケーブル敷設","配線","ケーブルラック","器具取付","盤据付","機器据付","結線・端末処理","接地工事","支持・固定","貫通部処理","防火区画貫通処理","埋設・掘削","はつり・穴あけ","試験・測定","材料検収","搬入","養生","撤去","清掃・片付け"];
-const FL=[["kubun","写真区分"],["koshu","工種"],["shubetsu","種別"],["basho","撮影箇所"],["naiyo","内容"],["biko","備考"]];
+const SHUBETSU=["墨出し","はつり・穴あけ","埋設・掘削","配管","ケーブルラック","配線","ケーブル敷設","盤・機器据付","器具取付","結線・端末処理","接地工事","貫通部処理","防火区画貫通処理","支持・固定","試験・測定","材料検収","搬入","養生","撤去","清掃・片付け"];
+/* 工程: 施工の順番。[工程, 写真区分, 種別]。工程を選ぶと区分・種別もこれに合わせる(空のところは変えない)。台帳は工程の順に並ぶ */
+const KOUTEI=[["着工前","着工前",""],["使用材料","使用材料","材料検収"],["安全管理","安全管理",""],["撤去","施工状況","撤去"],["墨出し","施工状況","墨出し"],
+["はつり・穴あけ","施工状況","はつり・穴あけ"],["埋設・掘削","施工状況","埋設・掘削"],["配管","施工状況","配管"],["ケーブルラック","施工状況","ケーブルラック"],["配線","施工状況","配線"],
+["盤・機器据付","施工状況","盤・機器据付"],["器具取付","施工状況","器具取付"],["結線・端末処理","施工状況","結線・端末処理"],["接地工事","施工状況","接地工事"],["貫通部処理","施工状況","貫通部処理"],
+["試験・測定","品質管理","試験・測定"],["完成","完成",""],["その他","",""]];
+const KL=KOUTEI.map(k=>k[0]);
+/* 工程が入っていない写真を並べるときの読み替え(種別→工程) */
+const KALIAS={"ケーブル敷設":"配線","入線":"配線","通線":"配線","支持・固定":"ケーブルラック","機器据付":"盤・機器据付","盤据付":"盤・機器据付","防火区画貫通処理":"貫通部処理","搬入":"使用材料","材料検収":"使用材料"};
+const FL=[["koutei","工程"],["kubun","写真区分"],["koshu","工種"],["shubetsu","種別"],["basho","撮影箇所"],["naiyo","内容"],["biko","備考"]];
 
 /* ===== 保存(IndexedDB) =====
    projects: 工事 / photos: 写真の情報(小さいサムネイル入り) / images: 写真本体(長辺1600px) */
@@ -277,7 +330,8 @@ delProject:(pj,ids)=>wtx(["projects","photos","images"],t=>{t.objectStore("proje
 /* ===== 状態 ===== */
 let PJS=[],PJ=null,PH=[],SORT=ls("pl-sort")||"koshu",BUSY=false,AIBUSY=false,STOP=false;
 const THU=new Map();
-if(["koshu","date","add"].indexOf(SORT)<0)SORT="koshu";
+if(["koshu","basho","date","add"].indexOf(SORT)<0)SORT="koshu";
+let SEL=null; /* まとめて振り分けで写真を選んでいるとき {place,koutei,ids} */
 
 /* ===== 画像 ===== */
 function loadImg(blob){return new Promise((res,rej)=>{const u=URL.createObjectURL(blob),im=new Image();
@@ -304,34 +358,49 @@ return {date:m[1]+"-"+m[2]+"-"+m[3],time:m[4]+":"+m[5]+":"+m[6]}}
 function fileDate(f){const d=new Date(f.lastModified||Date.now());return {date:ymd(d),time:pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds())}}
 
 /* ===== 一覧 ===== */
+function kIdx(p){let i=KL.indexOf((p.koutei||"").trim());if(i>=0)return i;const sh=(p.shubetsu||"").trim();i=KL.indexOf(KALIAS[sh]||sh);if(i>=0)return i;
+const kb={"着工前":"着工前","使用材料":"使用材料","安全管理":"安全管理","品質管理":"試験・測定","出来形管理":"試験・測定","完成":"完成"}[p.kubun];if(kb)return KL.indexOf(kb);
+return p.kubun==="施工状況"?KL.indexOf("貫通部処理")+0.5:KL.indexOf("その他")-0.5}
+function placeOrder(list){const own=(PJ&&PJ.places)||[];const rest=uniq(list.map(p=>p.basho)).filter(v=>own.indexOf(v)<0).sort((a,b)=>a.localeCompare(b,"ja"));return own.concat(rest)}
+/* 工種別: 工種→工程→撮影日 / 場所別: 撮影箇所→工程→撮影日 / 日付順 / 追加順 */
 function sorted(list){list=(list||PH).slice();
 const cust=[...new Set(list.map(p=>(p.koshu||"").trim()).filter(k=>k&&KOSHU.indexOf(k)<0))].sort((a,b)=>a.localeCompare(b,"ja"));
 const ki=p=>{const k=(p.koshu||"").trim();if(!k)return 1e4;const i=KOSHU.indexOf(k);return i>=0?i:500+cust.indexOf(k)};
+const po=placeOrder(list),pi=p=>{const k=(p.basho||"").trim();if(!k)return 1e4;return po.indexOf(k)};
 const bd=(x,y)=>(x.date||"9999-99-99").localeCompare(y.date||"9999-99-99")||(x.time||"").localeCompare(y.time||"")||x.created-y.created;
-if(SORT==="date")list.sort(bd);else if(SORT==="add")list.sort((x,y)=>x.created-y.created);else list.sort((x,y)=>ki(x)-ki(y)||bd(x,y));
+const kt=(x,y)=>kIdx(x)-kIdx(y);
+if(SORT==="date")list.sort(bd);else if(SORT==="add")list.sort((x,y)=>x.created-y.created);
+else if(SORT==="basho")list.sort((x,y)=>pi(x)-pi(y)||kt(x,y)||bd(x,y));else list.sort((x,y)=>ki(x)-ki(y)||kt(x,y)||bd(x,y));
 return list}
 function thumbURL(p){let u=THU.get(p.id);if(!u&&p.thumb){u=URL.createObjectURL(p.thumb);THU.set(p.id,u)}return u||""}
 function dropThumb(id){const u=THU.get(id);if(u){URL.revokeObjectURL(u);THU.delete(id)}}
-function gkey(p){return (p.koshu||"").trim()||"工種未入力"}
-function renderList(){const a=sorted(),g=$("grid");let h="",cur=null;const cnt={};
-if(SORT==="koshu")a.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
+function gmode(){return SORT==="basho"?"basho":"koshu"}
+function gkey(p,mode){mode=mode||gmode();return mode==="basho"?((p.basho||"").trim()||"撮影箇所なし"):((p.koshu||"").trim()||"工種未入力")}
+function renderList(){const a=sorted(),g=$("grid"),grp=SORT==="koshu"||SORT==="basho";let h="",cur=null;const cnt={};
+if(grp)a.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
 a.forEach((p,i)=>{
-if(SORT==="koshu"){const k=gkey(p);if(k!==cur){cur=k;h+='<div class="gh">'+E(k)+'<span class="note">'+cnt[k]+'枚</span></div>'}}
-const st=p.ai==="ok"?'<span class="st ok">AI</span>':(p.ai==="err"?'<span class="st err">AI失敗</span>':"");
-const t0=SORT==="koshu"?[p.kubun,p.shubetsu].filter(Boolean).join(" ・ "):[p.koshu,p.shubetsu].filter(Boolean).join(" ・ ");
+if(grp){const k=gkey(p);if(k!==cur){cur=k;h+='<div class="gh">'+E(k)+'<span class="note">'+cnt[k]+'枚</span><button type="button" class="gall" data-g="'+E(k)+'">全部選ぶ</button></div>'}}
+const q=AIQ.has(p.id),st=q?'<span class="st ok">'+(AIRUN===p.id?"AI仕分け中":"AI待ち")+'</span>':p.ai==="ok"?'<span class="st ok">AI</span>':(p.ai==="err"?'<span class="st err">AI失敗</span>':"");
+const kt=p.koutei||p.kubun;
+const t0=(SORT==="koshu"?[kt,p.basho]:SORT==="basho"?[p.koshu,kt]:[p.koshu,kt]).filter(Boolean).join(" ・ ");
 const t1=p.naiyo||p.shubetsu||"";
-h+='<button type="button" class="ph" data-id="'+p.id+'"><span class="im"><img src="'+thumbURL(p)+'" alt="" loading="lazy"><span class="no">No.'+(i+1)+'</span>'+st+'</span>'+
-'<span class="tx">'+(t0?'<span class="t0">'+E(t0)+'</span>':"")+'<span class="t1">'+(t1?E(t1):'<span class="note">未入力</span>')+'</span>'+
-'<span class="t2">'+E(fmtDate(p.date))+(p.basho?" ・ "+E(p.basho):"")+'</span></span></button>'});
+const on=SEL&&SEL.ids.has(p.id);
+h+='<button type="button" class="ph'+(on?" on":"")+'" data-id="'+p.id+'"><span class="im"><img src="'+thumbURL(p)+'" alt="" loading="lazy"><span class="no">No.'+(i+1)+'</span>'+st+'<span class="ck">'+(on?"✓":"")+'</span></span>'+
+'<span class="tx">'+(t0?'<span class="t0">'+E(t0)+'</span>':"")+'<span class="t1">'+(t1?E(t1):'<span class="note">'+(q?"AIが仕分けます…":"未入力")+'</span>')+'</span>'+
+'<span class="t2">'+E(fmtDate(p.date))+(SORT!=="koshu"&&SORT!=="basho"&&p.basho?" ・ "+E(p.basho):"")+'</span></span></button>'});
 g.innerHTML=h;$("empty").hidden=a.length>0;
 const ok=PH.filter(p=>p.ai==="ok").length,rest=PH.length-ok;
-$("stats").textContent=PH.length?("全"+PH.length+"枚"+(ok?" ・ AI入力済み "+ok+"枚":"")):"";
-$("aiBtn").textContent=rest?"AIで入力("+rest+")":"AIで入力";$("aiBtn").title="AIがまだ入れていない写真をまとめて入力";
-document.querySelectorAll("#sortSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===SORT)))}
+$("stats").textContent=PH.length?("全"+PH.length+"枚"+(ok?" ・ AI仕分け済み "+ok+"枚":"")):"";
+$("aiBtn").hidden=!rest||AIBUSY;$("aiBtn").textContent="AIで仕分け("+rest+")";
+document.querySelectorAll("#sortSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===SORT)));
+if(SEL)selShow()}
 
 function renderPj(){const s=$("pjSel");
 s.innerHTML=PJS.map(p=>'<option value="'+p.id+'">'+E(p.name||"(工事名なし)")+'</option>').join("")+'<option value="__new">＋ 新しい工事を追加</option>';
-s.value=PJ.id;$("pjNameCard").hidden=!!(PJ.name||"").trim();if((PJ.name||"")!==$("pjName").value&&document.activeElement!==$("pjName"))$("pjName").value=PJ.name||""}
+s.value=PJ.id;
+document.querySelectorAll("#pjInfo [data-p]").forEach(el=>{if(document.activeElement!==el)el.value=PJ[el.dataset.p]||""});pjSumShow();
+if(!(PJ.name||"").trim())$("pjInfo").open=true}
+function pjSumShow(){$("pjSum").textContent=[(PJ.name||"").trim()||"工事名なし",(PJ.company||"").trim()].filter(Boolean).join(" ・ ")}
 function renderAll(){renderPj();renderList()}
 
 /* ===== お知らせ帯 ===== */
@@ -346,13 +415,15 @@ $("banX").addEventListener("click",banOff);
 /* ===== 工事 ===== */
 function newProject(name){return {id:uid(),name:name||"",place:"",company:"",created:stamp()}}
 async function loadPhotos(){THU.forEach(u=>URL.revokeObjectURL(u));THU.clear();PH=await DB.byPj(PJ.id);PH.forEach(p=>{p.man=p.man||{}})}
-async function switchPj(id){const p=PJS.find(x=>x.id===id);if(!p)return;PJ=p;ls("pl-cur",p.id);await loadPhotos();renderAll()}
+async function switchPj(id){const p=PJS.find(x=>x.id===id);if(!p)return;if(SEL)selEnd();PJ=p;ls("pl-cur",p.id);await loadPhotos();renderAll()}
 async function addProject(){const p=newProject("");await DB.put("projects",p);PJS.push(p);await switchPj(p.id);return p}
 let pjT=null;
 function pjSave(){clearTimeout(pjT);const p=PJ;pjT=setTimeout(()=>{DB.put("projects",p).catch(e=>ban("保存できませんでした: "+e.message))},400)}
-$("pjSel").addEventListener("change",async e=>{const v=e.target.value;if(v==="__new"){await addProject();$("pjName").focus()}else await switchPj(v)});
-$("pjName").addEventListener("input",e=>{PJ.name=e.target.value;pjSave();const o=$("pjSel").querySelector('option[value="'+PJ.id+'"]');if(o)o.textContent=PJ.name||"(工事名なし)"});
-$("pjName").addEventListener("blur",()=>{if((PJ.name||"").trim())$("pjNameCard").hidden=true});
+$("pjSel").addEventListener("change",async e=>{const v=e.target.value;if(v==="__new"){await addProject();$("pjInfo").open=true;$("p-name").focus()}else await switchPj(v)});
+document.querySelectorAll("#pjInfo [data-p]").forEach(el=>el.addEventListener("input",()=>{PJ[el.dataset.p]=el.value;pjSave();pjSumShow();
+if(el.dataset.p==="name"){const o=$("pjSel").querySelector('option[value="'+PJ.id+'"]');if(o)o.textContent=PJ.name||"(工事名なし)"}}));
+{const o=ls("pl-info");$("pjInfo").open=o!=="0"}
+$("pjInfo").addEventListener("toggle",()=>ls("pl-info",$("pjInfo").open?"1":"0"));
 
 /* ===== 並べ方 ===== */
 $("sortSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;SORT=b.dataset.s;ls("pl-sort",SORT);renderList()});
@@ -360,25 +431,28 @@ $("sortSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(
 /* ===== 写真の取り込み ===== */
 $("fileIn").addEventListener("change",async e=>{const files=[...e.target.files];e.target.value="";if(files.length)await addFiles(files)});
 async function addFiles(files){if(BUSY||AIBUSY){ban("ほかの処理が終わってから追加してください",null,4000);return}
-BUSY=true;let ok=0,ng=0;
+BUSY=true;let ok=0,ng=0;const added=[];
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(e){}
 try{for(let i=0;i<files.length;i++){ban("写真を取り込み中… "+(i+1)+" / "+files.length);
-try{await addOne(files[i]);ok++}catch(err){ng++;console.warn(err)}
+try{added.push(await addOne(files[i]));ok++}catch(err){ng++;console.warn(err)}
 if(i%4===3)renderList()}}
 finally{BUSY=false;renderList()}
 const m=ok+"枚追加しました"+(ng?"("+ng+"枚は読み込めませんでした)":"");
-if(ok&&keyGet())ban(m,{label:"AIで入力",fn:()=>{banOff();bulk()}},12000);else ban(m,null,5000)}
+if(!ok){ban(m,null,5000);return}
+/* 取り込んだら、そのままAIが自動で仕分けする */
+if(keyGet()){ban(m);await sleep(600);bulk(added)}
+else ban(m+"。AIで自動仕分けするには、設定でGeminiのAPIキーを入れてください。",{label:"設定",fn:()=>{banOff();needKey()}},0)}
 async function addOne(f){let dt=null;try{dt=exifDate(await f.slice(0,262144).arrayBuffer())}catch(e){}
 const im=await loadImg(f);
 try{const big=await resize(im,1600,0.85),th=await resize(im,360,0.72),d=dt||fileDate(f);
 const p={id:uid(),pj:PJ.id,created:stamp(),w:big.w,h:big.h,thumb:th.blob,date:d.date,time:d.time,dateSrc:dt?"exif":"file",
-kubun:"",koshu:"",shubetsu:"",basho:"",naiyo:"",biko:"",board:"",ai:"",aiErr:"",man:{}};
-await DB.addPhoto(p,big.blob);PH.push(p)}
+koutei:"",kubun:"",koshu:"",shubetsu:"",basho:"",naiyo:"",biko:"",board:"",ai:"",aiErr:"",man:{}};
+await DB.addPhoto(p,big.blob);PH.push(p);return p}
 finally{freeImg(im)}}
 
 /* ===== シート(全画面の画面) ===== */
 function openSheet(id){$(id).hidden=false;$(id).scrollTop=0;document.documentElement.classList.add("lock")}
-function closeSheet(id){$(id).hidden=true;if(["ed","ex","st"].every(s=>$(s).hidden))document.documentElement.classList.remove("lock")}
+function closeSheet(id){$(id).hidden=true;if(["ed","ex","st","as"].every(s=>$(s).hidden))document.documentElement.classList.remove("lock")}
 
 /* ===== 写真の編集 ===== */
 let ED=null,EDURL="",ORDER=[];
@@ -393,26 +467,32 @@ $("dl-koshu").innerHTML=opt(uniq(PH.map(p=>p.koshu).concat(KOSHU)));
 $("dl-shu").innerHTML=opt(uniq(PH.map(p=>p.shubetsu).concat(SHUBETSU)));
 $("dl-basho").innerHTML=opt(uniq(PH.map(p=>p.basho)))}
 $("f-kubun").innerHTML='<option value="">(未選択)</option>'+KUBUN.map(k=>'<option>'+E(k)+'</option>').join("");
+$("f-koutei").innerHTML='<option value="">(未選択)</option>'+KL.map(k=>'<option>'+E(k)+'</option>').join("");
+/* 工程を決めたら、区分・種別もそれに合わせる(自分で決めた欄として扱う) */
+function setKoutei(p,k){p.koutei=k;p.man.koutei=!!k;const m=KOUTEI.find(x=>x[0]===k);if(!m)return;
+if(m[1]){p.kubun=m[1];p.man.kubun=true}if(m[2]){p.shubetsu=m[2];p.man.shubetsu=true}}
 async function openEd(id){const p=PH.find(x=>x.id===id);if(!p)return;
 if(!ED)ORDER=sorted().map(x=>x.id);
 ED=p;fillLists();fillEd();openSheet("ed");$("edMsg").textContent="";$("edMsg").classList.remove("ng");
 $("edImg").src=thumbURL(p);
 let b=null;try{b=await DB.img(id)}catch(e){}
 if(ED!==p)return;if(EDURL)URL.revokeObjectURL(EDURL);EDURL=b?URL.createObjectURL(b):"";if(EDURL)$("edImg").src=EDURL}
-function aiStatText(p){if(p.ai==="ok"){const d=new Date(p.aiAt||0);return "AI入力済み("+String(p.aiModel||"").replace(/^gemini-/,"")+"・"+(d.getMonth()+1)+"/"+d.getDate()+" "+d.getHours()+":"+pad(d.getMinutes())+")"}
-if(p.ai==="err")return "前回はAI入力に失敗: "+(p.aiErr||"");return "写真と黒板から、空いている欄をAIが入れます"}
+function aiStatText(p){if(p.ai==="ok"){const d=new Date(p.aiAt||0);return "AI仕分け済み("+String(p.aiModel||"").replace(/^gemini-/,"")+"・"+(d.getMonth()+1)+"/"+d.getDate()+" "+d.getHours()+":"+pad(d.getMinutes())+")"}
+if(p.ai==="err")return "前回はAIの仕分けに失敗: "+(p.aiErr||"");return "写真と黒板から、自分で決めていない欄をAIが入れます"}
 function fillEd(){const p=ED,i=ORDER.indexOf(p.id);
 $("edTitle").textContent="No."+(i+1)+" / "+ORDER.length;$("edPrev").disabled=i<=0;$("edNext").disabled=i<0||i>=ORDER.length-1;
 $("f-date").value=p.date||"";FL.forEach(([f])=>{$("f-"+f).value=p[f]||""});$("f-board").value=p.board||"";
 $("edAiSt").textContent=aiStatText(p);$("edAiSt").classList.toggle("ng",p.ai==="err")}
 document.querySelectorAll("#ed [data-f]").forEach(el=>{const h=()=>{if(!ED)return;const f=el.dataset.f,v=el.value;
-if(f==="date"){if(ED.date===v)return;ED.date=v;ED.dateSrc="man"}else{if((ED[f]||"")===v)return;ED[f]=v;ED.man[f]=!!v.trim()}dirty(ED)};
+if(f==="date"){if(ED.date===v)return;ED.date=v;ED.dateSrc="man"}
+else if(f==="koutei"){if((ED.koutei||"")===v)return;setKoutei(ED,v);fillEd()}
+else{if((ED[f]||"")===v)return;ED[f]=v;ED.man[f]=!!v.trim()}dirty(ED)};
 el.addEventListener("input",h);el.addEventListener("change",h)});
 function closeEd(){flush();ED=null;ORDER=[];if(EDURL){URL.revokeObjectURL(EDURL);EDURL=""}$("edImg").removeAttribute("src");closeSheet("ed");renderList()}
 $("edBack").addEventListener("click",closeEd);
 function edGo(d){if(!ED)return;flush();const i=ORDER.indexOf(ED.id)+d;if(i>=0&&i<ORDER.length)openEd(ORDER[i])}
 $("edPrev").addEventListener("click",()=>edGo(-1));$("edNext").addEventListener("click",()=>edGo(1));
-$("grid").addEventListener("click",e=>{const b=e.target.closest(".ph");if(b)openEd(b.dataset.id)});
+$("grid").addEventListener("click",e=>{if(SEL)return;const b=e.target.closest(".ph");if(b)openEd(b.dataset.id)});
 $("edDel").addEventListener("click",async()=>{const p=ED;if(!p)return;if(!confirm("この写真を削除します。元に戻せません。よろしいですか?"))return;
 const i=ORDER.indexOf(p.id);clearTimeout(DT.get(p.id));DT.delete(p.id);
 try{await DB.delPhoto(p.id)}catch(e){ban("削除できませんでした: "+e.message);return}
@@ -432,13 +512,14 @@ function keyGet(){return ls("gemini-key")||MEMKEY}
 function keySet(v){MEMKEY=v;ls("gemini-key",v||null)}
 const SCHEMA={type:"OBJECT",properties:{
 board:{type:"STRING"},board_date:{type:"STRING"},
-kubun:{type:"STRING",format:"enum",enum:KUBUN},
+koutei:{type:"STRING",format:"enum",enum:KL},kubun:{type:"STRING",format:"enum",enum:KUBUN},
 koshu:{type:"STRING"},shubetsu:{type:"STRING"},basho:{type:"STRING"},naiyo:{type:"STRING"},biko:{type:"STRING"}},
-required:["board","board_date","kubun","koshu","shubetsu","basho","naiyo","biko"]};
+required:["board","board_date","koutei","kubun","koshu","shubetsu","basho","naiyo","biko"]};
 const SYS="あなたは電気設備工事の工事写真を整理する助手です。写真1枚を見て、施工写真台帳の欄をJSONで埋めます。\n\n"+
 "# 欄の書き方\n"+
 "- board: 工事用の黒板(小黒板・ホワイトボード・電子小黒板の表示)が写っていれば、書かれている文字を上から順に「 / 」で区切って書き写す。読めない文字は「?」。黒板がなければ空。\n"+
 "- board_date: 黒板に日付があれば YYYY-MM-DD(和暦は西暦に直す)。なければ空。\n"+
+"- koutei: 工程(施工のどの段階の写真か)。次から1つ選ぶ: "+KL.join("、")+"。決め手がなければ「その他」。\n"+
 "- kubun: 写真区分。次から1つ選ぶ: 着工前(工事前の現況) / 施工状況(作業中・施工の途中) / 使用材料(材料・機器の搬入や検収、型番・銘板) / 品質管理(絶縁抵抗・接地抵抗・耐圧などの試験や測定) / 出来形管理(寸法・間隔・深さなどを測って確認) / 安全管理(KY活動・保護具・養生・安全設備) / 完成 / その他。\n"+
 "- koshu: 工種。黒板に書いてあればそれを使う。なければ写真から判断し、なるべく次の候補から選ぶ(合うものがなければ短い言葉で): "+KOSHU.join("、")+"\n"+
 "- shubetsu: 種別。黒板にあればそれを使う。なければなるべく次の候補から: "+SHUBETSU.join("、")+"\n"+
@@ -446,6 +527,7 @@ const SYS="あなたは電気設備工事の工事写真を整理する助手で
 "- naiyo: 何の写真か。体言止めで25文字以内。黒板や写真で読み取れる型番・サイズ(例「PF管φ22」「CVT60sq」)は入れてよい。\n"+
 "- biko: 台帳の備考向けに短く1文(40文字以内、体言止めか「〜を確認」)。写真で確かに言えることだけ書く。寸法・数値・合否は黒板やメーターで読めるときだけ書き、読めなければ書かない。書くことがなければ空。\n"+
 "- 写真から判断できない欄は空文字にする。工事の写真でなければ、naiyo に写っているものを書き、ほかは空でよい。\n\n"+
+"# 撮影者が決めた欄\n- 「撮影者が決めた欄」が送られてきたら、それは正しいものとして扱う。その欄は同じ値を返し、ほかの欄はそれに合う内容にする(例: 工程が配管なら、内容は配管の様子を書く。撮影箇所が決まっていれば、それを前提にする)。\n\n"+
 "# 表記\n- この工事ですでに使っている工種・種別の書き方が送られてきたら、同じものはその書き方に合わせる。\n- 日本語で書く。";
 function think(m){return /^gemini-2\./.test(m)?{thinkingBudget:512}:{thinkingLevel:"low"}}
 function parseJ(t){let o=null;try{o=JSON.parse(t)}catch(e){const m=String(t).match(/\{[\s\S]*\}/);if(m){try{o=JSON.parse(m[0])}catch(e2){}}}return o&&typeof o==="object"&&!Array.isArray(o)?o:null}
@@ -480,11 +562,13 @@ e.busy=busy;e.detail=log.join(" / ");throw e}
 async function analyze(p){const img=await DB.img(p.id);if(!img)throw new Error("写真のデータが見つかりません");
 const b64=String(await blobToDataURL(img)).split(",")[1];
 const ks=uniq(PH.map(x=>x.koshu)),ss=uniq(PH.map(x=>x.shubetsu));
+const fixed=FL.filter(([f])=>p.man[f]&&(p[f]||"").trim()&&f!=="naiyo"&&f!=="biko").map(([f,l])=>l+": "+p[f].trim());
 const user="# この工事ですでに使っている言葉(同じものは同じ書き方にそろえる)\n工種: "+(ks.join("、")||"(まだなし)")+"\n種別: "+(ss.join("、")||"(まだなし)")+
+(fixed.length?"\n\n# 撮影者が決めた欄(正しいものとして扱う)\n"+fixed.join("\n"):"")+
 "\n\n# 撮影日\n"+(p.date||"不明")+"\n\nこの写真1枚について、台帳の欄をJSONで返してください。";
 const r=await gem(b64,user),o=parseJ(r.text);if(!o)throw new Error("AIの返事を読み取れませんでした");applyAI(p,o,r.model);await savePhoto(p)}
 function applyAI(p,o,m){const v=k=>String(o[k]==null?"":o[k]).replace(/\s+/g," ").trim();
-const vals={kubun:KUBUN.indexOf(v("kubun"))>=0?v("kubun"):"",koshu:v("koshu"),shubetsu:v("shubetsu"),basho:v("basho"),naiyo:v("naiyo"),biko:v("biko")};
+const vals={koutei:KL.indexOf(v("koutei"))>=0?v("koutei"):"",kubun:KUBUN.indexOf(v("kubun"))>=0?v("kubun"):"",koshu:v("koshu"),shubetsu:v("shubetsu"),basho:v("basho"),naiyo:v("naiyo"),biko:v("biko")};
 FL.forEach(([f])=>{if(!p.man[f])p[f]=vals[f]});
 if(!p.man.board)p.board=String(o.board==null?"":o.board).trim();
 const bd=v("board_date");if(/^\d{4}-\d{2}-\d{2}$/.test(bd)&&p.dateSrc==="file"){p.date=bd;p.dateSrc="board"}
@@ -496,22 +580,69 @@ const tick=setInterval(()=>{b.textContent="解析中… "+Math.round((Date.now()
 edMsg("写真をAIに送っています(10〜30秒ほど)");
 try{await analyze(p);if(ED===p){fillEd();fillLists()}edMsg("")}
 catch(e){if(!e.fatal){p.ai="err";p.aiErr=e.message;savePhoto(p)}if(ED===p){fillEd();edMsg(e.message+(e.busy?"1分ほど待ってから、もう一度押してください。":"")+(e.detail?"("+e.detail+")":""),true)}}
-finally{clearInterval(tick);b.disabled=false;b.textContent="AIで入力";AIBUSY=false}}
-async function bulk(){if(AIBUSY||BUSY)return;if(!keyGet()){needKey();return}
-const list=sorted().filter(p=>p.ai!=="ok");if(!list.length){ban("AIで入力していない写真はありません",null,3500);return}
-AIBUSY=true;STOP=false;let done=0,ng=0,stopMsg="";const stopper={label:"止める",fn:()=>{STOP=true;$("banMsg").textContent="止めています…(いまの1枚が終わったら止まります)"}};
-try{for(let i=0;i<list.length&&!STOP;i++){const p=list[i];let tries=0;
-for(;;){ban("AIで入力中… "+(i+1)+" / "+list.length,stopper);
+finally{clearInterval(tick);b.disabled=false;b.textContent="AIで入れ直す";AIBUSY=false}}
+/* まとめてAI。targets を渡したらその写真(仕分け済みでも入れ直す)、なければまだの写真全部 */
+let AIRUN="";const AIQ=new Set();
+async function bulk(targets){if(AIBUSY||BUSY)return;if(!keyGet()){needKey();return}
+const list=targets?targets.filter(p=>PH.indexOf(p)>=0):sorted().filter(p=>p.ai!=="ok");if(!list.length){ban("AIで仕分けしていない写真はありません",null,3500);return}
+AIBUSY=true;STOP=false;let done=0,ng=0,stopMsg="";list.forEach(p=>AIQ.add(p.id));renderList();
+const stopper={label:"止める",fn:()=>{STOP=true;$("banMsg").textContent="止めています…(いまの1枚が終わったら止まります)"}};
+try{for(let i=0;i<list.length&&!STOP;i++){const p=list[i];let tries=0;AIRUN=p.id;renderList();
+for(;;){ban("AIが仕分け中… "+(i+1)+" / "+list.length,stopper);
 try{await analyze(p);done++;break}
 catch(e){if(e.fatal)throw e;
 if(e.busy&&tries<2&&!STOP){tries++;for(let s=40;s>0&&!STOP;s--){ban("回数の上限に当たったので待っています… あと"+s+"秒("+(i+1)+" / "+list.length+")",stopper);await sleep(1000)}if(STOP)break;continue}
-if(e.busy){stopMsg="無料枠の回数の上限に当たったので止めました。しばらく待ってから、続きをもう一度実行してください(1日の上限は夕方16〜17時ごろリセット)。";STOP=true;break}
+if(e.busy){stopMsg="無料枠の回数の上限に当たったので止めました。しばらく待ってから「AIで仕分け」で続きを実行してください(1日の上限は夕方16〜17時ごろリセット)。";STOP=true;break}
 p.ai="err";p.aiErr=e.message;savePhoto(p);ng++;break}}
-renderList();if(i<list.length-1&&!STOP)await sleep(1200)}
-ban(stopMsg||("AIで"+done+"枚入力しました"+(ng?"("+ng+"枚は失敗。写真を開いて「AIで入力」でやり直せます)":"")+(STOP?"(途中で止めました)":"")),null,stopMsg?0:9000)}
+AIQ.delete(p.id);AIRUN="";renderList();if(i<list.length-1&&!STOP)await sleep(1200)}
+ban(stopMsg||("AIで"+done+"枚仕分けしました"+(ng?"("+ng+"枚は失敗。写真を開いて「AIで入れ直す」でやり直せます)":"")+(STOP?"(途中で止めました)":"")),null,stopMsg?0:9000)}
 catch(e){ban(e.message,null,0)}
-finally{AIBUSY=false;renderList()}}
+finally{AIBUSY=false;AIRUN="";AIQ.clear();renderList()}}
 $("aiBtn").addEventListener("click",()=>{if(!PH.length){ban("先に写真を追加してください",null,3000);return}bulk()});
+
+/* ===== まとめて振り分け =====
+   ① 撮影箇所 → ② 工程 を選び、③ 一覧でその写真をタップ →「反映する」。
+   選んだ欄は「自分で決めた欄」になり、AIで入れ直しても変わらない(AIはそれを前提にほかの欄を考える) */
+let AS={place:null,koutei:null}; /* null = 変えない */
+function placesAll(){return placeOrder(PH)}
+function asRender(){const used=new Set(PH.map(p=>(p.basho||"").trim()));const ps=placesAll();
+if(AS.place&&ps.indexOf(AS.place)<0)AS.place=null;
+const opt=(v,label,on,cls)=>'<button type="button" class="opt'+(cls?" "+cls:"")+'" data-v="'+E(v)+'" aria-pressed="'+on+'">'+E(label)+'</button>';
+$("asPlaces").innerHTML=opt("__keep__","変えない",AS.place===null,"keep")+ps.map(v=>{const b=opt(v,v,AS.place===v);
+return used.has(v)?b:'<span class="pc">'+b+'<button type="button" class="rm" data-rm="'+E(v)+'" aria-label="'+E(v)+'を消す">×</button></span>'}).join("");
+$("asKoutei").innerHTML=opt("__keep__","変えない",AS.koutei===null,"keep")+KL.map(k=>opt(k,k,AS.koutei===k)).join("");
+const none=AS.place===null&&AS.koutei===null;$("asGo").disabled=none;
+$("asMsg").textContent=none?"撮影箇所か工程のどちらかを選んでください。":"次の画面で「"+asLabel()+"」にする写真をタップします。"}
+function asLabel(){return [AS.place,AS.koutei].filter(v=>v!==null).join("・")}
+function openAs(){if(!PH.length){ban("先に写真を追加してください",null,3000);return}if(BUSY||AIBUSY){ban("AIの仕分けが終わってから使ってください",null,4000);return}
+flush();$("asNew").value="";asRender();openSheet("as")}
+$("asBtn").addEventListener("click",openAs);
+$("asBack").addEventListener("click",()=>closeSheet("as"));
+$("asPlaces").addEventListener("click",e=>{const rm=e.target.closest("[data-rm]");
+if(rm){const v=rm.dataset.rm;PJ.places=(PJ.places||[]).filter(x=>x!==v);pjSave();if(AS.place===v)AS.place=null;asRender();return}
+const b=e.target.closest(".opt");if(!b)return;const v=b.dataset.v;AS.place=v==="__keep__"?null:v;asRender()});
+$("asKoutei").addEventListener("click",e=>{const b=e.target.closest(".opt");if(!b)return;const v=b.dataset.v;AS.koutei=v==="__keep__"?null:v;asRender()});
+function asAddPlace(){const v=$("asNew").value.replace(/\s+/g," ").trim();if(!v)return;PJ.places=PJ.places||[];if(PJ.places.indexOf(v)<0){PJ.places.push(v);pjSave()}
+AS.place=v;$("asNew").value="";asRender()}
+$("asNewBtn").addEventListener("click",asAddPlace);
+$("asNew").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();asAddPlace()}});
+$("asGo").addEventListener("click",()=>{if(AS.place===null&&AS.koutei===null)return;SEL={place:AS.place,koutei:AS.koutei,ids:new Set()};
+closeSheet("as");document.documentElement.classList.add("selmode");$("barMain").hidden=true;$("barSel").hidden=false;banOff();renderList()});
+function selShow(){const n=SEL.ids.size;$("selMsg").innerHTML="「"+E(asLabel2(SEL))+"」にする写真を選択中 <span>("+n+"枚)</span>";
+$("selApply").disabled=!n;$("selApply").textContent=n?n+"枚に反映する":"反映する"}
+function asLabel2(o){return [o.place,o.koutei].filter(v=>v!==null).join("・")}
+function selEnd(){SEL=null;document.documentElement.classList.remove("selmode");$("barMain").hidden=false;$("barSel").hidden=true;renderList()}
+$("selCancel").addEventListener("click",()=>{selEnd();banOff()});
+$("grid").addEventListener("click",e=>{if(!SEL)return;const g=e.target.closest(".gall");
+if(g){const k=g.dataset.g,ids=PH.filter(p=>gkey(p)===k).map(p=>p.id),all=ids.every(id=>SEL.ids.has(id));ids.forEach(id=>all?SEL.ids.delete(id):SEL.ids.add(id));renderList();return}
+const b=e.target.closest(".ph");if(!b)return;const id=b.dataset.id;if(SEL.ids.has(id))SEL.ids.delete(id);else SEL.ids.add(id);
+b.classList.toggle("on",SEL.ids.has(id));b.querySelector(".ck").textContent=SEL.ids.has(id)?"✓":"";selShow()},true);
+$("selApply").addEventListener("click",async()=>{if(!SEL||!SEL.ids.size)return;const o=SEL,list=PH.filter(p=>o.ids.has(p.id));
+list.forEach(p=>{if(o.place!==null){p.basho=o.place;p.man.basho=true}if(o.koutei!==null)setKoutei(p,o.koutei)});
+if(o.place!==null){PJ.places=PJ.places||[];if(PJ.places.indexOf(o.place)<0){PJ.places.push(o.place);pjSave()}}
+await Promise.all(list.map(savePhoto));selEnd();
+const m=list.length+"枚を「"+asLabel2(o)+"」にしました";
+if(keyGet())ban(m+"。内容・備考もこれに合わせて入れ直せます",{label:"AIで入れ直す",fn:()=>{banOff();bulk(list)}},15000);else ban(m,null,5000)});
 
 /* ===== 出力: 共通 ===== */
 const URLS=[];
@@ -538,10 +669,11 @@ let EXK=null;
 function exItems(){const f=$("exFrom").value,t=$("exTo").value;
 return sorted().filter(p=>EXK.has(gkey(p))&&(!f||(p.date&&p.date>=f))&&(!t||(p.date&&p.date<=t)))}
 function exRender(){document.querySelectorAll("#fmtSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===FMT)));
-const n=exItems().length;$("exCount").textContent=n?n+"枚 ・ A4で"+Math.ceil(n/3)+"ページ(並びは一覧の「"+({koshu:"工種ごと",date:"日付順",add:"追加順"})[SORT]+"」と同じ)":"出力する写真がありません";
+const n=exItems().length;$("exCount").textContent=n?n+"枚 ・ A4で"+Math.ceil(n/3)+"ページ(並びは一覧の「"+({koshu:"工種別",basho:"場所別",date:"日付順",add:"追加順"})[SORT]+"」と同じ)":"出力する写真がありません";
 $("exGo").disabled=!n||BUSY}
 function openEx(){if(!PH.length){ban("先に写真を追加してください",null,3000);return}flush();
-const ks=uniq(sorted().map(gkey));EXK=new Set(ks);const cnt={};PH.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
+$("exKLabel").textContent=gmode()==="basho"?"撮影箇所":"工種";
+const ks=uniq(sorted().map(p=>gkey(p)));EXK=new Set(ks);const cnt={};PH.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
 $("exKoshu").innerHTML=ks.map(k=>'<label class="chip"><input type="checkbox" checked value="'+E(k)+'">'+E(k)+'<span class="note">'+cnt[k]+'</span></label>').join("");
 $("exMsg").textContent="";$("exMsg").classList.remove("ng");$("exProg").hidden=true;clearFiles($("exFiles"));exRender();openSheet("ex")}
 $("exBtn").addEventListener("click",openEx);
@@ -661,16 +793,14 @@ prog("Excelを仕上げ中…",1);const buf=await wb.xlsx.writeBuffer();
 return new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
 
 /* ===== 設定 ===== */
-function openSt(){flush();$("s-name").value=PJ.name||"";$("s-place").value=PJ.place||"";$("s-company").value=PJ.company||"";
+function openSt(){flush();
 keyShow();$("aiKMsg").textContent="";$("aiKMsg").classList.remove("ng");$("bkMsg").textContent="";clearFiles($("bkFiles"));thShow();usage();openSheet("st")}
 $("stBtn").addEventListener("click",openSt);
 $("stBack").addEventListener("click",()=>{closeSheet("st");renderAll()});
-document.querySelectorAll("#st [data-p]").forEach(el=>el.addEventListener("input",()=>{PJ[el.dataset.p]=el.value;pjSave()}));
-$("pjAdd").addEventListener("click",async()=>{await addProject();openSt();$("s-name").focus()});
 $("pjDel").addEventListener("click",async()=>{if(!confirm("「"+(PJ.name||"工事名なし")+"」と写真"+PH.length+"枚を、この端末から削除します。元に戻せません。よろしいですか?"))return;
 try{await DB.delProject(PJ.id,PH.map(p=>p.id))}catch(e){ban("削除できませんでした: "+e.message);return}
 PJS=PJS.filter(p=>p!==PJ);if(!PJS.length){const p=newProject("");await DB.put("projects",p);PJS.push(p)}
-await switchPj(PJS[PJS.length-1].id);openSt()});
+await switchPj(PJS[PJS.length-1].id);ban("工事を削除しました",null,4000)});
 function keyShow(){const k=keyGet(),i=$("aiKey");i.value="";i.placeholder=k?"保存済み(…"+k.slice(-4)+")":"APIキーを貼り付け";$("aiDel").hidden=!k}
 $("aiSave").addEventListener("click",()=>{const v=$("aiKey").value.replace(/\s+/g,"");const m=$("aiKMsg");m.classList.remove("ng");
 if(!v){m.textContent="キーが入っていません。貼り付けてから「保存」を押してください。";return}keySet(v);keyShow();m.textContent="保存しました。";renderList()});
@@ -681,17 +811,17 @@ async function usage(){try{if(navigator.storage&&navigator.storage.estimate){con
 $("bkOut").addEventListener("click",async()=>{if(BUSY)return;BUSY=true;const m=$("bkMsg");m.classList.remove("ng");clearFiles($("bkFiles"));
 try{const photos=[];for(let i=0;i<PH.length;i++){m.textContent="書き出し中… "+(i+1)+" / "+PH.length;const p=PH[i],img=await DB.img(p.id);
 const o={};Object.keys(p).forEach(k=>{if(k!=="thumb")o[k]=p[k]});o.img=img?await blobToDataURL(img):"";photos.push(o)}
-const data={app:"photo-ledger",v:1,at:new Date().toISOString(),project:{name:PJ.name||"",place:PJ.place||"",company:PJ.company||""},photos};
+const data={app:"photo-ledger",v:1,at:new Date().toISOString(),project:{name:PJ.name||"",place:PJ.place||"",company:PJ.company||"",places:PJ.places||[]},photos};
 const b=new Blob([JSON.stringify(data)],{type:"application/json"});
 fileItem($("bkFiles"),b,"写真台帳バックアップ_"+(fsafe(PJ.name)||"工事")+"_"+today8()+".json");m.textContent="できました。「共有・保存」から「ファイルに保存」などで保存してください。"}
 catch(e){m.textContent="書き出せませんでした: "+e.message;m.classList.add("ng")}finally{BUSY=false}});
 $("bkIn").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f||BUSY)return;BUSY=true;const m=$("bkMsg");m.classList.remove("ng");
 try{m.textContent="読み込み中…";const o=JSON.parse(await f.text());if(!o||o.app!=="photo-ledger"||!Array.isArray(o.photos))throw new Error("写真台帳のバックアップファイルではないようです");
-const pj=newProject((o.project&&o.project.name||"")+"(読み込み)");pj.place=o.project&&o.project.place||"";pj.company=o.project&&o.project.company||"";
+const pj=newProject((o.project&&o.project.name||"")+"(読み込み)");pj.place=o.project&&o.project.place||"";pj.company=o.project&&o.project.company||"";pj.places=o.project&&Array.isArray(o.project.places)?o.project.places.map(String):[];
 await DB.put("projects",pj);PJS.push(pj);let n=0;
 for(let i=0;i<o.photos.length;i++){m.textContent="読み込み中… "+(i+1)+" / "+o.photos.length;const s=o.photos[i];if(!s||!s.img)continue;
 try{const blob=await dataURLToBlob(s.img),im=await loadImg(blob);let th;try{th=await resize(im,360,0.72)}finally{freeImg(im)}
-const p={};["w","h","date","time","dateSrc","kubun","koshu","shubetsu","basho","naiyo","biko","board","ai","aiErr","aiModel","aiAt"].forEach(k=>{if(s[k]!=null)p[k]=s[k]});
+const p={};["w","h","date","time","dateSrc","koutei","kubun","koshu","shubetsu","basho","naiyo","biko","board","ai","aiErr","aiModel","aiAt"].forEach(k=>{if(s[k]!=null)p[k]=s[k]});
 FL.forEach(([k])=>{p[k]=String(p[k]||"")});p.board=String(p.board||"");
 p.id=uid();p.pj=pj.id;p.created=stamp();p.thumb=th.blob;p.man=s.man&&typeof s.man==="object"?s.man:{};await DB.addPhoto(p,blob);n++}catch(err){console.warn(err)}}
 await switchPj(pj.id);openSt();$("bkMsg").textContent="「"+pj.name+"」として写真"+n+"枚を読み込みました。"}
