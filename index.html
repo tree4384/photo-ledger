@@ -101,9 +101,10 @@ padding:14px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-
 .empty p{margin:4px 0}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);
 padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
-.bar .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:8px}
+.bar .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 #barSel{max-width:980px;margin:0 auto}
-.bar .btn{padding:10px 4px;font-size:14px;min-height:48px;position:relative}
+.bar .btn{padding:10px 2px;font-size:14px;min-height:48px;position:relative;white-space:nowrap}
+.bar .btn .cnt{position:absolute;top:-7px;right:-3px;min-width:21px;height:21px;border-radius:11px;background:#c0392b;color:#fff;font-size:12px;line-height:21px;padding:0 6px;font-weight:700}
 .ban{position:fixed;left:12px;right:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:25;max-width:640px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 10px 10px 14px;display:flex;gap:8px;align-items:center;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.22)}
 .ban .msg{flex:1}
 .ban button{appearance:none;font:inherit;font-weight:700;border:0;border-radius:9px;padding:7px 11px;cursor:pointer;background:var(--bg);color:var(--ink);white-space:nowrap}
@@ -188,7 +189,7 @@ a{color:var(--acc)}
 <div class="tools">
 <div class="seg" id="sortSeg" role="group" aria-label="並べ方"><button type="button" data-s="koshu">工種別</button><button type="button" data-s="basho">場所別</button><button type="button" data-s="date">日付順</button><button type="button" data-s="add">追加順</button></div>
 </div>
-<div class="tools2"><p class="note" id="stats"></p><button type="button" class="btn sm" id="aiBtn" hidden>AIで仕分け</button></div>
+<div class="tools2"><p class="note" id="stats"></p></div>
 
 <div class="grid" id="grid"></div>
 <div class="card empty" id="empty" hidden>
@@ -201,9 +202,10 @@ a{color:var(--acc)}
 <div class="ban" id="ban" role="status" hidden><span class="msg" id="banMsg"></span><button type="button" id="banAct" hidden></button><button type="button" class="x" id="banX" aria-label="閉じる">×</button></div>
 
 <nav class="bar"><div class="in" id="barMain">
-<label class="btn pri" id="addBtn">＋ 写真を追加<input type="file" id="fileIn" class="vh" accept="image/*" multiple></label>
+<label class="btn pri" id="addBtn">＋ 写真<input type="file" id="fileIn" class="vh" accept="image/*" multiple></label>
+<button type="button" class="btn" id="aiBtn">AI仕分け</button>
 <button type="button" class="btn" id="asBtn">振り分け</button>
-<button type="button" class="btn" id="exBtn">台帳を出力</button>
+<button type="button" class="btn" id="exBtn">台帳出力</button>
 </div>
 <div id="barSel" hidden><p class="msg" id="selMsg"></p><div class="row"><button type="button" class="btn" id="selCancel">やめる</button><button type="button" class="btn pri" id="selApply">反映する</button></div></div>
 </nav>
@@ -301,7 +303,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v6</p>
+<p class="note" style="text-align:center">施工写真台帳 v7</p>
 </div>
 </div>
 
@@ -423,7 +425,8 @@ h+='<div class="ph'+(on?" on":"")+'" role="button" tabindex="0" data-id="'+p.id+
 g.innerHTML=h;$("empty").hidden=a.length>0;
 const ok=PH.filter(p=>p.ai==="ok").length,skp=PH.filter(p=>p.ai==="skip").length,rest=PH.length-ok-skp;
 $("stats").textContent=PH.length?("全"+PH.length+"枚"+(ok?" ・ AI済み "+ok:"")+(skp?" ・ 手入力 "+skp:"")):"";
-$("aiBtn").hidden=!rest||AIBUSY;$("aiBtn").textContent="AIで仕分け("+rest+")";
+/* AI仕分けボタンはいつも出しておく。まだ仕分けていない枚数を赤い丸で出す */
+$("aiBtn").disabled=AIBUSY;$("aiBtn").innerHTML=(AIBUSY?"仕分け中":"AI仕分け")+(rest&&!AIBUSY?'<span class="cnt">'+rest+'</span>':"");
 document.querySelectorAll("#sortSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===SORT)));
 if(SEL)selShow()}
 
@@ -482,7 +485,7 @@ finally{BUSY=false;renderList()}
 const m=ok+"枚追加しました"+(ng?"("+ng+"枚は読み込めませんでした)":"");
 if(!ok){ban(m,null,5000);return}
 /* AIの仕分けは自動では始めない。いらない写真を消してから、ボタンで始める */
-if(keyGet())ban(m+"。いらない写真を消してから「AIで仕分け」を押してください",{label:"AIで仕分け",fn:()=>{banOff();bulk()}},10000);
+if(keyGet())ban(m+"。いらない写真を消してから「AI仕分け」を押してください",{label:"AI仕分け",fn:()=>{banOff();bulk()}},10000);
 else ban(m,null,4000)}
 async function addOne(f){let dt=null;try{dt=exifDate(await f.slice(0,262144).arrayBuffer())}catch(e){}
 const im=await loadImg(f);
@@ -659,13 +662,17 @@ catch(e){if(e.fatal)throw e;
 /* 5秒で終わらなかった写真は「手入力」にして、すぐ次へ */
 if(e.slow){p.ai="skip";p.aiErr=e.message;if(PH.indexOf(p)>=0)savePhoto(p);sk++;break}
 if(e.busy&&tries<2&&!STOP){tries++;for(let s=40;s>0&&!STOP;s--){ban("回数の上限に当たったので待っています… あと"+s+"秒("+(i+1)+" / "+list.length+")",stopper);await sleep(1000)}if(STOP)break;continue}
-if(e.busy){stopMsg="無料枠の回数の上限に当たったので止めました。しばらく待ってから「AIで仕分け」で続きを実行してください(1日の上限は夕方16〜17時ごろリセット)。";STOP=true;break}
+if(e.busy){stopMsg="無料枠の回数の上限に当たったので止めました。しばらく待ってから「AI仕分け」で続きを実行してください(1日の上限は夕方16〜17時ごろリセット)。";STOP=true;break}
 p.ai="err";p.aiErr=e.message;if(PH.indexOf(p)>=0)savePhoto(p);ng++;break}}
 AIQ.delete(p.id);AIRUN="";renderList();if(i<list.length-1&&!STOP)await sleep(300)}
 ban(stopMsg||("AIで"+done+"枚仕分けしました"+(sk?"。"+sk+"枚は"+AI_LIMIT/1000+"秒で終わらなかったので「手入力」にしました":"")+(ng?"。"+ng+"枚は失敗(写真を開いて「AIで入れ直す」でやり直せます)":"")+(STOP?"(途中で止めました)":"")),null,stopMsg?0:9000)}
 catch(e){ban(e.message,null,0)}
 finally{AIBUSY=false;AIRUN="";AIQ.clear();renderList()}}
-$("aiBtn").addEventListener("click",()=>{if(!PH.length){ban("先に写真を追加してください",null,3000);return}bulk()});
+$("aiBtn").addEventListener("click",()=>{if(!PH.length){ban("先に写真を追加してください",null,3000);return}
+const rest=PH.filter(p=>p.ai!=="ok"&&p.ai!=="skip");if(rest.length){bulk();return}
+const sk=sorted().filter(p=>p.ai==="skip");
+if(sk.length){ban("まだの写真はありません。「手入力」の"+sk.length+"枚を、もう一度AIで試しますか?",{label:"試す",fn:()=>{banOff();bulk(sk)}},9000);return}
+ban("全部AIで仕分け済みです。手で決めた欄はそのままで、ほかの欄をやり直せます",{label:"全部やり直す",fn:()=>{banOff();bulk(sorted())}},9000)});
 
 /* ===== 工種・場所を1枚ずつ選ぶ =====
    一覧の写真の「工種 ▾」「場所 ▾」から。この工事で一度使った・作ったものが並ぶ。選んだ欄は自分で決めた欄になる */
