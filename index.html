@@ -71,7 +71,10 @@ label.l{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px;font-wei
 .ph .im{position:relative;aspect-ratio:4/3;background:var(--head);display:block;overflow:hidden}
 .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .ph .no{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.62);color:#fff;font-size:12px;border-radius:6px;padding:1px 7px;font-weight:700}
-.ph .st{position:absolute;right:6px;top:6px;font-size:11px;border-radius:6px;padding:1px 7px;font-weight:700;color:#fff}
+.ph .st{position:absolute;left:6px;bottom:6px;font-size:11px;border-radius:6px;padding:1px 7px;font-weight:700;color:#fff}
+.ph .del{position:absolute;right:4px;top:4px;width:34px;height:34px;border-radius:50%;border:0;padding:0;background:rgba(0,0,0,.58);color:#fff;font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ph .del:active{background:#c0392b}
+.selmode .ph .del{display:none}
 .st.ok{background:#1a7f4b}.st.err{background:#c0392b}
 .ph .tx{padding:7px 9px 9px;font-size:13px;line-height:1.45;display:block}
 .ph .t0{display:block;font-size:12px;color:var(--acc);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -271,7 +274,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v2</p>
+<p class="note" style="text-align:center">施工写真台帳 v3</p>
 </div>
 </div>
 
@@ -385,9 +388,9 @@ const kt=p.koutei||p.kubun;
 const t0=(SORT==="koshu"?[kt,p.basho]:SORT==="basho"?[p.koshu,kt]:[p.koshu,kt]).filter(Boolean).join(" ・ ");
 const t1=p.naiyo||p.shubetsu||"";
 const on=SEL&&SEL.ids.has(p.id);
-h+='<button type="button" class="ph'+(on?" on":"")+'" data-id="'+p.id+'"><span class="im"><img src="'+thumbURL(p)+'" alt="" loading="lazy"><span class="no">No.'+(i+1)+'</span>'+st+'<span class="ck">'+(on?"✓":"")+'</span></span>'+
+h+='<div class="ph'+(on?" on":"")+'" role="button" tabindex="0" data-id="'+p.id+'"><span class="im"><img src="'+thumbURL(p)+'" alt="" loading="lazy"><span class="no">No.'+(i+1)+'</span>'+st+'<button type="button" class="del" aria-label="No.'+(i+1)+'の写真を削除">×</button><span class="ck">'+(on?"✓":"")+'</span></span>'+
 '<span class="tx">'+(t0?'<span class="t0">'+E(t0)+'</span>':"")+'<span class="t1">'+(t1?E(t1):'<span class="note">'+(q?"AIが仕分けます…":"未入力")+'</span>')+'</span>'+
-'<span class="t2">'+E(fmtDate(p.date))+(SORT!=="koshu"&&SORT!=="basho"&&p.basho?" ・ "+E(p.basho):"")+'</span></span></button>'});
+'<span class="t2">'+E(fmtDate(p.date))+(SORT!=="koshu"&&SORT!=="basho"&&p.basho?" ・ "+E(p.basho):"")+'</span></span></div>'});
 g.innerHTML=h;$("empty").hidden=a.length>0;
 const ok=PH.filter(p=>p.ai==="ok").length,rest=PH.length-ok;
 $("stats").textContent=PH.length?("全"+PH.length+"枚"+(ok?" ・ AI仕分け済み "+ok+"枚":"")):"";
@@ -415,7 +418,7 @@ $("banX").addEventListener("click",banOff);
 /* ===== 工事 ===== */
 function newProject(name){return {id:uid(),name:name||"",place:"",company:"",created:stamp()}}
 async function loadPhotos(){THU.forEach(u=>URL.revokeObjectURL(u));THU.clear();PH=await DB.byPj(PJ.id);PH.forEach(p=>{p.man=p.man||{}})}
-async function switchPj(id){const p=PJS.find(x=>x.id===id);if(!p)return;if(SEL)selEnd();PJ=p;ls("pl-cur",p.id);await loadPhotos();renderAll()}
+async function switchPj(id){const p=PJS.find(x=>x.id===id);if(!p)return;if(SEL)selEnd();if(DEL.length)await commitDel();PJ=p;ls("pl-cur",p.id);await loadPhotos();renderAll()}
 async function addProject(){const p=newProject("");await DB.put("projects",p);PJS.push(p);await switchPj(p.id);return p}
 let pjT=null;
 function pjSave(){clearTimeout(pjT);const p=PJ;pjT=setTimeout(()=>{DB.put("projects",p).catch(e=>ban("保存できませんでした: "+e.message))},400)}
@@ -492,11 +495,20 @@ function closeEd(){flush();ED=null;ORDER=[];if(EDURL){URL.revokeObjectURL(EDURL)
 $("edBack").addEventListener("click",closeEd);
 function edGo(d){if(!ED)return;flush();const i=ORDER.indexOf(ED.id)+d;if(i>=0&&i<ORDER.length)openEd(ORDER[i])}
 $("edPrev").addEventListener("click",()=>edGo(-1));$("edNext").addEventListener("click",()=>edGo(1));
-$("grid").addEventListener("click",e=>{if(SEL)return;const b=e.target.closest(".ph");if(b)openEd(b.dataset.id)});
-$("edDel").addEventListener("click",async()=>{const p=ED;if(!p)return;if(!confirm("この写真を削除します。元に戻せません。よろしいですか?"))return;
-const i=ORDER.indexOf(p.id);clearTimeout(DT.get(p.id));DT.delete(p.id);
-try{await DB.delPhoto(p.id)}catch(e){ban("削除できませんでした: "+e.message);return}
-PH=PH.filter(x=>x!==p);dropThumb(p.id);ORDER.splice(i,1);
+$("grid").addEventListener("click",e=>{if(SEL)return;const b=e.target.closest(".ph");if(!b)return;
+if(e.target.closest(".del")){const p=PH.find(x=>x.id===b.dataset.id);if(p)softDel(p);return}openEd(b.dataset.id)});
+$("grid").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("ph")){e.preventDefault();e.target.click()}});
+/* 削除: すぐ一覧から消し、7秒は「元に戻す」で戻せる。そのあと(またはアプリを閉じたとき)本当に消す */
+let DEL=[],delT=null;
+function softDel(p){if(AIRUN===p.id){ban("この写真はAIが仕分け中です。終わってから消してください",null,4000);return}
+AIQ.delete(p.id);clearTimeout(DT.get(p.id));DT.delete(p.id);PH=PH.filter(x=>x!==p);DEL.push(p);renderList();
+clearTimeout(delT);delT=setTimeout(commitDel,7000);
+ban((DEL.length>1?DEL.length+"枚の":"")+"写真を削除しました",{label:"元に戻す",fn:undoDel},7000)}
+function undoDel(){clearTimeout(delT);const n=DEL.length;DEL.forEach(p=>{if(PH.indexOf(p)<0){PH.push(p);savePhoto(p)}});DEL=[];renderList();ban(n+"枚を元に戻しました",null,2500)}
+async function commitDel(){clearTimeout(delT);delT=null;const list=DEL;DEL=[];
+for(const p of list){try{await DB.delPhoto(p.id)}catch(e){ban("削除できませんでした: "+e.message);PH.push(p);renderList();continue}dropThumb(p.id)}}
+$("edDel").addEventListener("click",()=>{const p=ED;if(!p)return;if(AIRUN===p.id){edMsg("AIが仕分け中です。終わってから消してください",true);return}
+const i=ORDER.indexOf(p.id);softDel(p);ORDER.splice(i,1);
 if(!ORDER.length){closeEd();return}openEd(ORDER[Math.min(i,ORDER.length-1)])});
 $("edAi").addEventListener("click",()=>{if(ED)runOne(ED)});
 function edMsg(t,ng){$("edMsg").textContent=t||"";$("edMsg").classList.toggle("ng",!!ng)}
@@ -566,7 +578,8 @@ const fixed=FL.filter(([f])=>p.man[f]&&(p[f]||"").trim()&&f!=="naiyo"&&f!=="biko
 const user="# この工事ですでに使っている言葉(同じものは同じ書き方にそろえる)\n工種: "+(ks.join("、")||"(まだなし)")+"\n種別: "+(ss.join("、")||"(まだなし)")+
 (fixed.length?"\n\n# 撮影者が決めた欄(正しいものとして扱う)\n"+fixed.join("\n"):"")+
 "\n\n# 撮影日\n"+(p.date||"不明")+"\n\nこの写真1枚について、台帳の欄をJSONで返してください。";
-const r=await gem(b64,user),o=parseJ(r.text);if(!o)throw new Error("AIの返事を読み取れませんでした");applyAI(p,o,r.model);await savePhoto(p)}
+const r=await gem(b64,user),o=parseJ(r.text);if(!o)throw new Error("AIの返事を読み取れませんでした");
+if(PH.indexOf(p)<0&&DEL.indexOf(p)<0)return;applyAI(p,o,r.model);if(PH.indexOf(p)>=0)await savePhoto(p)}
 function applyAI(p,o,m){const v=k=>String(o[k]==null?"":o[k]).replace(/\s+/g," ").trim();
 const vals={koutei:KL.indexOf(v("koutei"))>=0?v("koutei"):"",kubun:KUBUN.indexOf(v("kubun"))>=0?v("kubun"):"",koshu:v("koshu"),shubetsu:v("shubetsu"),basho:v("basho"),naiyo:v("naiyo"),biko:v("biko")};
 FL.forEach(([f])=>{if(!p.man[f])p[f]=vals[f]});
@@ -587,7 +600,7 @@ async function bulk(targets){if(AIBUSY||BUSY)return;if(!keyGet()){needKey();retu
 const list=targets?targets.filter(p=>PH.indexOf(p)>=0):sorted().filter(p=>p.ai!=="ok");if(!list.length){ban("AIで仕分けしていない写真はありません",null,3500);return}
 AIBUSY=true;STOP=false;let done=0,ng=0,stopMsg="";list.forEach(p=>AIQ.add(p.id));renderList();
 const stopper={label:"止める",fn:()=>{STOP=true;$("banMsg").textContent="止めています…(いまの1枚が終わったら止まります)"}};
-try{for(let i=0;i<list.length&&!STOP;i++){const p=list[i];let tries=0;AIRUN=p.id;renderList();
+try{for(let i=0;i<list.length&&!STOP;i++){const p=list[i];let tries=0;if(PH.indexOf(p)<0)continue;AIRUN=p.id;renderList();
 for(;;){ban("AIが仕分け中… "+(i+1)+" / "+list.length,stopper);
 try{await analyze(p);done++;break}
 catch(e){if(e.fatal)throw e;
@@ -833,8 +846,8 @@ $("thSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
 if(t==="auto"){ls("app-theme",null);document.documentElement.removeAttribute("data-theme")}else{ls("app-theme",t);document.documentElement.setAttribute("data-theme",t)}thShow()});
 
 /* ===== 起動 ===== */
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush()});
-window.addEventListener("pagehide",flush);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){flush();if(DEL.length)commitDel()}});
+window.addEventListener("pagehide",()=>{flush();if(DEL.length)commitDel()});
 async function init(){try{PJS=await DB.all("projects")}catch(e){$("bootMsg").textContent="このブラウザでは写真を保存できません(プライベートブラウズでは使えません)。";$("bootMsg").classList.add("ng");return}
 if(!PJS.length){const p=newProject("");await DB.put("projects",p);PJS=[p]}
 PJS.sort((a,b)=>a.created-b.created);const last=ls("pl-cur");PJ=PJS.find(p=>p.id===last)||PJS[PJS.length-1];
