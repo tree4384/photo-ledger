@@ -3,7 +3,7 @@
    - 部品(アイコン・PDF/Excel作成ライブラリ・フォント): 一度読み込んだら保存したものを使う
    - Gemini(AI)への問い合わせは保存しない
    アプリを更新したときは CACHE の番号を1つ上げる */
-const CACHE = "photo-ledger-12";
+const CACHE = "photo-ledger-13";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png?v=2", "./icon-192.png?v=2", "./icon-512.png?v=2"];
 const LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",

@@ -78,6 +78,13 @@ label.l{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px;font-wei
 .swmode .ph:not(.sw) .no{background:var(--acc)}
 .selmode .ph .no{pointer-events:none}
 .selmode .ph .no i{display:none}
+.ph{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.ph .im img{pointer-events:none;-webkit-user-drag:none}
+.ph .no{touch-action:none}
+.dgghost{position:fixed;left:0;top:0;z-index:999;pointer-events:none;border-radius:10px;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.4);opacity:.92;will-change:transform}
+.dgghost img{width:100%;height:100%;object-fit:cover;display:block}
+.ph.dgsrc{opacity:.35}
+.ph.dgt{border-color:var(--wa);box-shadow:0 0 0 3px var(--wa)}
 .lnk{appearance:none;-webkit-appearance:none;border:0;background:transparent;font:inherit;font-size:13px;color:var(--acc);text-decoration:underline;padding:6px 2px;cursor:pointer;white-space:nowrap}
 .ph .st{position:absolute;left:6px;bottom:6px;font-size:11px;border-radius:6px;padding:1px 7px;font-weight:700;color:#fff}
 .ph .del{position:absolute;right:4px;top:4px;width:34px;height:34px;border-radius:50%;border:0;padding:0;background:rgba(0,0,0,.58);color:#fff;font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -326,7 +333,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v12</p>
+<p class="note" style="text-align:center">施工写真台帳 v13</p>
 </div>
 </div>
 
@@ -443,11 +450,39 @@ function hasOrd(){const om=ordMap();if(!om)return false;const ks=new Set(PH.map(
 function ordSet(k,v){if(!PJ.order||typeof PJ.order!=="object")PJ.order={};const m=ordMap()||(PJ.order[SORT]={});if(v)m[k]=v;else delete m[k];pjSave()}
 function swOff(){SW=null;banOff();renderList()}
 function swStart(id){const i=sorted().findIndex(p=>p.id===id);if(i<0)return;SW=id;renderList();ban("No."+(i+1)+" と入れ替える写真をタップしてください",{label:"やめる",fn:swOff})}
-function swDo(id){const a=sorted(),pa=a.find(p=>p.id===SW),pb=a.find(p=>p.id===id);if(!pa||!pb||pa===pb){swOff();return}
-const k=ordKey(pa);if(k!==ordKey(pb)){const w=gmode()==="basho"?"場所":"工種";ban("入れ替えは同じ"+w+"の中でできます。別の"+w+"へ移すときは「"+w+" ▾」から選んでください",{label:"やめる",fn:swOff});return}
+function swDo(id){const from=SW;if(!from||from===id){swOff();return}swPair(from,id,false)}
+/* 2枚を入れ替える。drag=true はスライドで入れ替えたとき(入れ替えモードの帯は出ていない) */
+function swPair(ia,ib,drag){const a=sorted(),pa=a.find(p=>p.id===ia),pb=a.find(p=>p.id===ib);if(!pa||!pb||pa===pb){if(!drag)swOff();return}
+const k=ordKey(pa);if(k!==ordKey(pb)){const w=gmode()==="basho"?"場所":"工種",m="入れ替えは同じ"+w+"の中でできます。別の"+w+"へ移すときは「"+w+" ▾」から選んでください";if(drag)ban(m,null,6000);else ban(m,{label:"やめる",fn:swOff});return}
 const na=a.indexOf(pa)+1,nb=a.indexOf(pb)+1,ids=a.filter(p=>ordKey(p)===k).map(p=>p.id),om=ordMap(),prev=om&&Array.isArray(om[k])?om[k].slice():null,mode=SORT,pj=PJ;
 const i=ids.indexOf(pa.id),j=ids.indexOf(pb.id);ids[i]=pb.id;ids[j]=pa.id;ordSet(k,ids);SW=null;renderList();
 ban("No."+na+" と No."+nb+" を入れ替えました",{label:"元に戻す",fn:()=>{banOff();if(PJ!==pj||SORT!==mode)return;ordSet(k,prev);renderList()}},7000)}
+/* ===== スライドで入れ替え: 写真を長押ししてから動かし、入れ替えたい写真の上ではなす(No.の札からは長押しなしで動かせる) =====
+   長押しの前に指が動いたらスクロール。動かしている間は画面の上下の端で自動スクロール */
+let DG=null,DGEND=0;
+function dgClear(){const d=DG;if(!d)return;clearTimeout(d.t);cancelAnimationFrame(d.raf);if(d.ghost)d.ghost.remove();d.el.classList.remove("dgsrc");if(d.over)d.over.classList.remove("dgt");DG=null}
+function dgHit(){const d=DG;if(!d||!d.on)return;const e=document.elementFromPoint(d.x,d.y),t=e&&e.closest?e.closest("#grid .ph"):null,nt=t&&t!==d.el?t:null;
+if(nt!==d.over){if(d.over)d.over.classList.remove("dgt");if(nt)nt.classList.add("dgt");d.over=nt}}
+function dgMove(x,y){const d=DG;d.x=x;d.y=y;if(d.ghost)d.ghost.style.transform="translate("+Math.round(x-d.gw/2)+"px,"+Math.round(y-d.gh*0.62)+"px)";dgHit()}
+function dgBegin(){const d=DG;if(!d||d.on)return;if(!d.el.isConnected||SEL){dgClear();return}d.on=true;
+if(SW){SW=null;banOff();document.querySelectorAll("#grid .ph.sw").forEach(x=>x.classList.remove("sw"));$("grid").classList.remove("swmode")}
+const r=d.el.querySelector(".im").getBoundingClientRect(),img=d.el.querySelector("img"),g=document.createElement("div");g.className="dgghost";
+d.gw=Math.round(r.width*0.82);d.gh=Math.round(r.height*0.82);g.style.width=d.gw+"px";g.style.height=d.gh+"px";if(img){const c=document.createElement("img");c.src=img.src;c.alt="";g.appendChild(c)}
+document.body.appendChild(g);d.ghost=g;d.el.classList.add("dgsrc");dgMove(d.x,d.y);
+const loop=()=>{const q=DG;if(!q||!q.on)return;if(!q.el.isConnected){dgClear();return}const y=q.y,h=window.innerHeight;let v=0;if(y<110)v=-Math.ceil((110-y)/7);else if(y>h-170)v=Math.ceil((y-(h-170))/7);
+if(v){window.scrollBy(0,v);dgHit()}q.raf=requestAnimationFrame(loop)};d.raf=requestAnimationFrame(loop)}
+(function(){const G=$("grid");
+G.addEventListener("touchstart",e=>{if(DG)dgClear();if(SEL||e.touches.length!==1)return;const el=e.target.closest(".ph");if(!el||e.target.closest(".del,.pick"))return;
+const onNo=!!e.target.closest(".no");if(!onNo&&!e.target.closest(".im"))return;const t=e.touches[0];
+DG={el,id:el.dataset.id,x:t.clientX,y:t.clientY,sx:t.clientX,sy:t.clientY,on:false,onNo,over:null,ghost:null,raf:0,t:0,gw:0,gh:0};
+if(!onNo)DG.t=setTimeout(dgBegin,380)},{passive:true});
+G.addEventListener("touchmove",e=>{const d=DG;if(!d)return;const t=e.touches[0],far=Math.hypot(t.clientX-d.sx,t.clientY-d.sy);
+if(!d.on){if(!d.onNo){if(far>10)dgClear();return}if(far<=8)return;d.x=t.clientX;d.y=t.clientY;dgBegin();if(!DG)return}
+if(e.cancelable)e.preventDefault();dgMove(t.clientX,t.clientY)},{passive:false});
+const end=e=>{const d=DG;if(!d)return;if(!d.on){dgClear();return}if(e.cancelable)e.preventDefault();const to=d.over?d.over.dataset.id:null,from=d.id;dgClear();DGEND=Date.now();
+if(to&&e.type==="touchend")swPair(from,to,true)};
+G.addEventListener("touchend",end);G.addEventListener("touchcancel",end);
+G.addEventListener("contextmenu",e=>{if(e.target.closest(".ph .im"))e.preventDefault()})})();
 /* サムネイルは ArrayBuffer(p.tb)で保存し、表示のたびにメモリ上の Blob を作る。
    iPhoneのSafariでは、IndexedDBから読んだ Blob をそのまま使うと、写真の情報を保存し直したときに表示が壊れるため */
 function thumbURL(p){let u=THU.get(p.id);if(!u&&p.tb&&p.tb.byteLength){u=URL.createObjectURL(new Blob([p.tb],{type:"image/jpeg"}));THU.set(p.id,u)}return u||""}
@@ -616,7 +651,7 @@ function gCreate(){const v=$("gnewIn").value.replace(/\s+/g," ").trim();if(!v)re
 ban("「"+v+"」を作りました。「＋ 写真」から写真を入れられます",null,4000)}
 $("gnewBtn").addEventListener("click",gCreate);
 $("gnewIn").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();gCreate()}});
-$("grid").addEventListener("click",e=>{if(SEL)return;
+$("grid").addEventListener("click",e=>{if(SEL)return;if(Date.now()-DGEND<300)return;
 if(SW){const sb=e.target.closest(".ph");if(sb)swDo(sb.dataset.id);return}
 const nb=e.target.closest(".no");if(nb){const sb=nb.closest(".ph");if(sb)swStart(sb.dataset.id);return}
 const ga=e.target.closest(".gadd");if(ga){if(BUSY||AIBUSY){ban("ほかの処理が終わってから追加してください",null,4000);return}ADDTO={k:gmode(),v:ga.dataset.g};$("fileIn2").click();return}
