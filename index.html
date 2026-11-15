@@ -225,7 +225,8 @@ a{color:var(--acc)}
 <div class="seg kbseg" id="kbSeg" role="group" aria-labelledby="kbSegL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button></div>
 <p class="pks" id="kbSizeL">黒板の大きさ</p>
 <div class="seg" id="kbSize" role="group" aria-labelledby="kbSizeL"><button type="button" data-v="s">小</button><button type="button" data-v="m">中</button><button type="button" data-v="l">大</button></div></div></div>
-<p class="note">写真の隅に工事黒板を重ねて、一覧と台帳(PDF・Excel)に出します。工事名と施工者はここの内容、工種・場所・内容・日付は写真ごとの欄が入ります(上は見本)。写真ごとに位置・大きさを変えたり外したりするときは、写真を開いて選びます。保存してある元の写真は変わりません。もう一度押すと外れます。</p>
+<div class="btns" style="margin-top:10px"><button type="button" class="btn sm" id="kbSave">黒板つきの写真を保存</button></div>
+<p class="note">写真の隅に工事黒板を重ねて、一覧と台帳(PDF・Excel)に出します。工事名と施工者はここの内容、工種・場所・内容・日付は写真ごとの欄が入ります(上は見本)。写真ごとに位置・大きさを変えたり外したりするときは、写真を開いて選びます。保存してある元の写真は変わりません。もう一度押すと外れます。「黒板つきの写真を保存」は、黒板を付けた写真だけを画像(JPEG)で書き出します。</p>
 </div></div>
 <div class="row2">
 <div><label class="l" for="p-place">工事場所</label><input type="text" id="p-place" data-p="place" autocomplete="off" placeholder="例: 東京都○○区"></div>
@@ -320,11 +321,11 @@ a{color:var(--acc)}
 
 <!-- 台帳の出力 -->
 <div class="sheet" id="ex" hidden>
-<div class="sh-h"><button type="button" class="btn sm" id="exBack">‹ 戻る</button><h2>台帳を出力</h2><span class="sp"></span></div>
+<div class="sh-h"><button type="button" class="btn sm" id="exBack">‹ 戻る</button><h2 id="exH">台帳を出力</h2><span class="sp"></span></div>
 <div class="sh-b">
 <section class="card"><h3>形式</h3>
-<div class="seg" id="fmtSeg" role="group" aria-label="形式"><button type="button" data-v="pdf">PDF</button><button type="button" data-v="xlsx">Excel</button><button type="button" data-v="both">両方</button></div>
-<p class="note">A4縦に写真3枚ずつ並べた台帳です。Excelには写真なしの「一覧」シートも付きます。</p></section>
+<div class="seg" id="fmtSeg" role="group" aria-label="形式"><button type="button" data-v="pdf">PDF</button><button type="button" data-v="xlsx">Excel</button><button type="button" data-v="both">両方</button><button type="button" data-v="img" id="fmtImg" hidden>黒板つき写真</button></div>
+<p class="note" id="fmtNote"></p></section>
 <section class="card"><h3>出力する写真</h3>
 <p class="note" style="margin-top:0" id="exKLabel">工種</p>
 <div class="chips" id="exKoshu"></div>
@@ -362,7 +363,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v15</p>
+<p class="note" style="text-align:center">施工写真台帳 v16</p>
 </div>
 </div>
 
@@ -1002,28 +1003,60 @@ let FMT=ls("pl-fmt")||"both";if(["pdf","xlsx","both"].indexOf(FMT)<0)FMT="both";
 let EXK=null;
 function exItems(){const f=$("exFrom").value,t=$("exTo").value;
 return sorted().filter(p=>EXK.has(gkey(p))&&(!f||(p.date&&p.date>=f))&&(!t||(p.date&&p.date<=t)))}
-function exRender(){document.querySelectorAll("#fmtSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===FMT)));
-const items0=exItems(),n=items0.length;$("exCount").textContent=n?n+"枚 ・ A4で"+Math.ceil(n/3)+"ページ(並びは一覧の「"+({koshu:"工種別",basho:"場所別",date:"日付順",add:"追加順"})[SORT]+"」と同じ)"+(kbPj()?" ・ 工事黒板つき"+(items0.some(p=>!kbPos(p))?"(外した写真を除く)":""):""):"出力する写真がありません";
+function exRender(){$("fmtImg").hidden=!kbPj();if(FMT==="img"&&!kbPj())FMT=fmtSaved();const im=FMT==="img";
+document.querySelectorAll("#fmtSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===FMT)));
+$("exH").textContent=im?"黒板つきの写真を保存":"台帳を出力";$("exGo").textContent=im?"黒板つきの写真を作成":"台帳を作成";
+$("fmtNote").textContent=im?"工事黒板を付けた写真だけを、1枚ずつの画像(JPEG)にします。黒板を「なし」にした写真は入りません。iPhoneでは「共有・保存」→「画像を保存」で写真アプリに入ります。":"A4縦に写真3枚ずつ並べた台帳です。Excelには写真なしの「一覧」シートも付きます。";
+const items0=exItems(),sm=({koshu:"工種別",basho:"場所別",date:"日付順",add:"追加順"})[SORT];let n=items0.length;
+if(im){const k=items0.filter(p=>kbPos(p)).length,off=n-k;n=k;$("exCount").textContent=k?"黒板つきの写真 "+k+"枚"+(off?"(黒板なしの"+off+"枚は入りません)":"")+" ・ 並びは一覧の「"+sm+"」と同じ":"黒板を付けた写真がありません"}
+else $("exCount").textContent=n?n+"枚 ・ A4で"+Math.ceil(n/3)+"ページ(並びは一覧の「"+sm+"」と同じ)"+(kbPj()?" ・ 工事黒板つき"+(items0.some(p=>!kbPos(p))?"(外した写真を除く)":""):""):"出力する写真がありません";
 $("exGo").disabled=!n||BUSY}
-function openEx(){if(!PH.length){ban("先に写真を追加してください",null,3000);return}flush();
+function fmtSaved(){const f=ls("pl-fmt");return ["pdf","xlsx","both"].indexOf(f)>=0?f:"both"}
+/* fmt="img" で開くと「黒板つき写真」が選ばれた状態になる(工事情報の「黒板つきの写真を保存」から) */
+function openEx(fmt){if(!PH.length){ban("先に写真を追加してください",null,3000);return}flush();FMT=fmt==="img"&&kbPj()?"img":fmtSaved();
 $("exKLabel").textContent=gmode()==="basho"?"撮影箇所":"工種";
 const ks=uniq(sorted().map(p=>gkey(p)));EXK=new Set(ks);const cnt={};PH.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
 $("exKoshu").innerHTML=ks.map(k=>'<label class="chip"><input type="checkbox" checked value="'+E(k)+'">'+E(k)+'<span class="note">'+cnt[k]+'</span></label>').join("");
 $("exMsg").textContent="";$("exMsg").classList.remove("ng");$("exProg").hidden=true;clearFiles($("exFiles"));exRender();openSheet("ex")}
 $("exBtn").addEventListener("click",openEx);
 $("exBack").addEventListener("click",()=>{if(BUSY)return;closeSheet("ex")});
-$("fmtSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;FMT=b.dataset.v;ls("pl-fmt",FMT);exRender()});
+$("fmtSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;FMT=b.dataset.v;if(FMT!=="img")ls("pl-fmt",FMT);clearFiles($("exFiles"));$("exMsg").textContent="";$("exProg").hidden=true;exRender()});
+$("kbSave").addEventListener("click",()=>{if(BUSY||AIBUSY){ban("ほかの処理が終わってから保存してください",null,4000);return}openEx("img")});
 $("exKoshu").addEventListener("change",e=>{const c=e.target;if(c.checked)EXK.add(c.value);else EXK.delete(c.value);exRender()});
 $("exFrom").addEventListener("input",exRender);$("exTo").addEventListener("input",exRender);
 function exProg(t,r){$("exMsg").textContent=t;$("exProg").hidden=false;$("exBar").style.width=Math.round((r||0)*100)+"%"}
-$("exGo").addEventListener("click",async()=>{const items=exItems();if(!items.length||BUSY||AIBUSY)return;
+$("exGo").addEventListener("click",async()=>{const all=exItems(),items=FMT==="img"?all.filter(p=>kbPos(p)):all;if(!items.length||BUSY||AIBUSY)return;
 BUSY=true;$("exGo").disabled=true;$("exBack").disabled=true;clearFiles($("exFiles"));$("exMsg").classList.remove("ng");
 const base="施工写真台帳_"+(fsafe(PJ.name)||"工事")+"_"+today8();
-try{if(FMT!=="xlsx"){const b=await makePDF(items,(t,r)=>exProg(t,FMT==="both"?r*0.5:r));fileItem($("exFiles"),b,base+".pdf")}
+try{if(FMT==="img"){await makeImgs(items,all,exProg);return}
+if(FMT!=="xlsx"){const b=await makePDF(items,(t,r)=>exProg(t,FMT==="both"?r*0.5:r));fileItem($("exFiles"),b,base+".pdf")}
 if(FMT!=="pdf"){const b=await makeXLSX(items,(t,r)=>exProg(t,FMT==="both"?0.5+r*0.5:r));fileItem($("exFiles"),b,base+".xlsx")}
 exProg("できました。「共有・保存」から「ファイルに保存」やLINE・メールに送れます。",1)}
 catch(e){console.error(e);$("exMsg").textContent="作成できませんでした: "+(e&&e.message||e);$("exMsg").classList.add("ng")}
 finally{BUSY=false;$("exBack").disabled=false;exRender()}});
+
+/* ===== 出力: 黒板つきの写真 =====
+   黒板を付けた写真だけを、黒板を焼き込んだJPEG(保存してある大きさ=長辺1600px)にする。
+   ファイル名は「台帳のNo._工種_場所_撮影日.jpg」。iPhoneでは共有シートの「画像を保存」で写真アプリに入る。
+   一度にたくさん共有すると失敗することがあるので、IMG_N 枚ずつのボタンに分ける。下に1枚ずつの保存も出す */
+const IMG_N=20;
+async function makeImgs(items,all,prog){await fontsReady();const files=[],ul=$("exFiles");let total=0;
+for(let i=0;i<items.length;i++){const p=items[i];prog("黒板つきの写真を作成中… "+(i+1)+" / "+items.length+"枚",i/items.length);
+const img=await DB.img(p.id);if(!img)continue;const im=await loadImg(img);let r;
+try{r=await resize(im,1600,0.9,(x,w,h)=>kbOn(x,0,0,w,h,p))}finally{freeImg(im)}
+const no=all.indexOf(p)+1,name=[("00"+no).slice(-3),fsafe(p.koshu),fsafe(p.basho),(p.date||"").replace(/-/g,"")].filter(Boolean).join("_")+".jpg";
+files.push(new File([r.blob],name,{type:"image/jpeg"}));total+=r.blob.size;if(i%3===2)await sleep(0)}
+if(!files.length)throw new Error("写真のデータが見つかりません");
+const can=fs=>{try{return !!(navigator.canShare&&navigator.canShare({files:fs}))}catch(e){return false}};
+const li=document.createElement("li");li.innerHTML='<div class="fn">黒板つきの写真 '+files.length+'枚<span class="note">'+sizeStr(total)+'</span></div><div class="fb"></div>';const fb=li.querySelector(".fb");
+if(can([files[0]]))for(let i=0;i<files.length;i+=IMG_N){const part=files.slice(i,i+IMG_N),b=document.createElement("button");b.type="button";b.className="btn sm pri";
+b.textContent=files.length<=IMG_N?"まとめて共有・保存":(i+1)+"〜"+(i+part.length)+"枚目を共有・保存";
+b.addEventListener("click",async()=>{try{await navigator.share({files:part})}catch(e){if(e&&e.name!=="AbortError")ban("まとめて共有できませんでした。下の「1枚ずつ保存する」を試してください。",null,6000)}});fb.appendChild(b)}
+ul.appendChild(li);
+const li2=document.createElement("li");li2.innerHTML='<details><summary class="fn" style="cursor:pointer">1枚ずつ保存する</summary><ul class="files" style="margin-top:8px"></ul></details>';ul.appendChild(li2);
+const d=li2.querySelector("details");d.addEventListener("toggle",()=>{const u=d.querySelector("ul");if(d.open&&!u.children.length)files.forEach(f=>fileItem(u,f,f.name))});
+if(!can([files[0]]))d.open=true;
+prog("できました。「共有・保存」→「画像を保存」で写真アプリに入ります。",1)}
 
 /* ===== 出力: PDF =====
    A4縦(210×297mm)に3枚。1ページずつキャンバスに描いて画像にし、jsPDFでPDFにまとめる(日本語フォントを埋め込まなくてよい) */
