@@ -198,7 +198,9 @@ a{color:var(--acc)}
 .kbseg button:nth-child(-n+2){border-top:0}
 .kbseg button:nth-child(even){border-left:1px solid var(--line)}
 .ph img.kb,.edw img.kb{position:absolute;inset:auto;width:36%;height:auto;aspect-ratio:10/7;object-fit:fill;background:#17553a;box-shadow:0 0 0 1px rgba(0,0,0,.3);pointer-events:none}
-.ph img.kb.lt{left:3%;top:4%}.ph img.kb.rt{right:3%;top:4%}.ph img.kb.lb{left:3%;bottom:4%}.ph img.kb.rb{right:3%;bottom:4%}
+.ph img.kb.lt{left:0;top:0}.ph img.kb.rt{right:0;top:0}.ph img.kb.lb{left:0;bottom:0}.ph img.kb.rb{right:0;bottom:0}
+.ph img.kb.zs{width:27%}.ph img.kb.zl{width:47%}
+.kbr .pks+.seg+.pks{margin-top:10px}
 .edw{position:relative;max-width:100%;line-height:0}
 .edw.fit #edImg{width:100%;height:100%;max-height:none}
 #edKbRow .pks{margin-bottom:4px}
@@ -220,8 +222,10 @@ a{color:var(--acc)}
 <div class="kbset"><button type="button" class="btn sm" id="kbBtn" aria-pressed="false">工事黒板を付ける</button>
 <div id="kbBox" hidden>
 <div class="kbrow"><img id="kbPrev" alt="工事黒板の見本"><div class="kbr"><p class="pks" id="kbSegL">黒板の位置</p>
-<div class="seg kbseg" id="kbSeg" role="group" aria-labelledby="kbSegL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button></div></div></div>
-<p class="note">写真の隅に工事黒板を重ねて、一覧と台帳(PDF・Excel)に出します。工事名と施工者はここの内容、工種・場所・内容・日付は写真ごとの欄が入ります(上は見本)。写真ごとに位置を変えたり外したりするときは、写真を開いて選びます。保存してある元の写真は変わりません。もう一度押すと外れます。</p>
+<div class="seg kbseg" id="kbSeg" role="group" aria-labelledby="kbSegL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button></div>
+<p class="pks" id="kbSizeL">黒板の大きさ</p>
+<div class="seg" id="kbSize" role="group" aria-labelledby="kbSizeL"><button type="button" data-v="s">小</button><button type="button" data-v="m">中</button><button type="button" data-v="l">大</button></div></div></div>
+<p class="note">写真の隅に工事黒板を重ねて、一覧と台帳(PDF・Excel)に出します。工事名と施工者はここの内容、工種・場所・内容・日付は写真ごとの欄が入ります(上は見本)。写真ごとに位置・大きさを変えたり外したりするときは、写真を開いて選びます。保存してある元の写真は変わりません。もう一度押すと外れます。</p>
 </div></div>
 <div class="row2">
 <div><label class="l" for="p-place">工事場所</label><input type="text" id="p-place" data-p="place" autocomplete="off" placeholder="例: 東京都○○区"></div>
@@ -274,7 +278,8 @@ a{color:var(--acc)}
 <div class="sh-b">
 <div class="edimg"><div class="edw" id="edW"><img id="edImg" alt="写真"><img id="edKb" class="kb" alt="" hidden></div></div>
 <div id="edKbRow" hidden><p class="pks" id="edKbL">工事黒板(この写真)</p>
-<div class="seg" id="edKbSeg" role="group" aria-labelledby="edKbL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button><button type="button" data-v="off">なし</button></div></div>
+<div class="seg" id="edKbSeg" role="group" aria-labelledby="edKbL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button><button type="button" data-v="off">なし</button></div>
+<div class="seg" id="edKbSize" role="group" aria-label="この写真の黒板の大きさ" style="margin-top:6px"><button type="button" data-v="s">小</button><button type="button" data-v="m">中</button><button type="button" data-v="l">大</button></div></div>
 <div class="aibar"><button type="button" class="btn pri" id="edAi">AIで入れ直す</button><p class="note" id="edAiSt"></p></div>
 <p class="note" id="edMsg" role="status"></p>
 <div class="row2">
@@ -357,7 +362,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v14</p>
+<p class="note" style="text-align:center">施工写真台帳 v15</p>
 </div>
 </div>
 
@@ -522,7 +527,7 @@ const t1=[kt,p.naiyo||p.shubetsu].filter(Boolean).join(" ・ ");
 const pk=(k,lab,v)=>'<button type="button" class="pick'+(v?"":" unset")+'" data-k="'+k+'" aria-label="'+lab+'を選ぶ"><b>'+lab+'</b><span>'+E(v||(q?(AIRUN.has(p.id)?"AIが仕分け中…":"AI待ち"):"未入力"))+'</span><i>▾</i></button>';
 const on=SEL&&SEL.ids.has(p.id);
 /* 工事黒板: 作ってある画像があればすぐ出し、なければあとで kbFill() が入れる */
-const kp=kbPos(p),ku=kp?kbThumb(p,false):"",kb=kp?'<img class="kb '+kp+'" alt="" '+(ku?'src="'+ku+'"':'data-kb="'+p.id+'"')+'>':"";
+const kp=kbPos(p),ku=kp?kbThumb(p,false):"",kb=kp?'<img class="kb '+kp+' z'+kbSize(p)+'" alt="" '+(ku?'src="'+ku+'"':'data-kb="'+p.id+'"')+'>':"";
 h+='<div class="ph'+(on?" on":"")+(SW===p.id?" sw":"")+'" role="button" tabindex="0" data-id="'+p.id+'"><span class="im"><img src="'+thumbURL(p)+'" alt="" loading="lazy">'+kb+'<button type="button" class="no" aria-label="No.'+(i+1)+'を入れ替える">No.'+(i+1)+'<i>⇅</i></button>'+st+'<button type="button" class="del" aria-label="No.'+(i+1)+'の写真を削除">×</button><span class="ck">'+(on?"✓":"")+'</span></span>'+
 '<span class="tx">'+pk("koshu","工種",(p.koshu||"").trim())+pk("basho","場所",(p.basho||"").trim())+
 (t1?'<span class="t1">'+E(t1)+'</span>':"")+'<span class="t2">'+E(fmtDate(p.date))+'</span></span></div>';return h};
@@ -585,10 +590,12 @@ if(kbPj()&&el.dataset.p!=="place"){clearTimeout(kbT);kbT=setTimeout(()=>{kbShow(
 /* 工事黒板のボタン(工事名の下)。オンにすると位置の選択と見本が出る */
 function kbShow(){const on=kbPj(),b=$("kbBtn");b.setAttribute("aria-pressed",String(on));b.textContent=on?"✓ 工事黒板を付けています":"工事黒板を付ける";$("kbBox").hidden=!on;if(!on)return;
 document.querySelectorAll("#kbSeg button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===kbPjPos())));
+document.querySelectorAll("#kbSize button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===kbPjSize())));
 $("kbPrev").src=kbImg({name:(PJ.name||"").trim(),koshu:"幹線設備 ・ 配線",basho:"3階 電気室",naiyo:"CVT60sq ケーブル敷設",date:fmtDate(ymd(new Date())),company:(PJ.company||"").trim()},480)}
-$("kbBtn").addEventListener("click",()=>{const on=!kbPj();PJ.kb={on,pos:kbPjPos()};pjSave();kbShow();renderList();
+$("kbBtn").addEventListener("click",()=>{const on=!kbPj();PJ.kb={on,pos:kbPjPos(),size:kbPjSize()};pjSave();kbShow();renderList();
 ban(on?"写真に工事黒板を付けました。台帳(PDF・Excel)にも出ます":"工事黒板を外しました",null,4000)});
 $("kbSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!kbPj())return;PJ.kb.pos=b.dataset.v;pjSave();kbShow();renderList()});
+$("kbSize").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!kbPj())return;PJ.kb.size=b.dataset.v;pjSave();kbShow();renderList()});
 {const o=ls("pl-info");$("pjInfo").open=o!=="0"}
 $("pjInfo").addEventListener("toggle",()=>ls("pl-info",$("pjInfo").open?"1":"0"));
 
@@ -676,14 +683,16 @@ $("edAiSt").textContent=aiStatText(p);$("edAiSt").classList.toggle("ng",p.ai==="
 let edKbT=null;
 function edKbShow(){const p=ED,el=$("edKb");if(!p)return;$("edKbRow").hidden=!kbPj();const pos=kbPos(p);
 document.querySelectorAll("#edKbSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===(pos||"off"))));
+$("edKbSize").hidden=!pos;document.querySelectorAll("#edKbSize button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===kbSize(p))));
 if(!pos){el.hidden=true;el.removeAttribute("src");return}
-const W=p.w||4,H=p.h||3,r=kbRect(W,H,pos);
+const W=p.w||4,H=p.h||3,r=kbRect(W,H,pos,kbSize(p));
 el.style.left=(r.x/W*100).toFixed(2)+"%";el.style.top=(r.y/H*100).toFixed(2)+"%";el.style.width=(r.w/W*100).toFixed(2)+"%";
 el.src=kbImg(kbFields(p),640);el.hidden=false}
 function edKbLater(){if(!kbPj())return;clearTimeout(edKbT);edKbT=setTimeout(()=>{if(ED)edKbShow()},250)}
 $("edKbSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!ED||!kbPj())return;const v=b.dataset.v;
 /* 工事の設定と同じ位置を選んだら「設定どおり」に戻す(あとで工事の位置を変えたら一緒に動く) */
 ED.kb=v===kbPjPos()?"":v;dirty(ED);edKbShow()});
+$("edKbSize").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!ED||!kbPj())return;const v=b.dataset.v;ED.kbSize=v===kbPjSize()?"":v;dirty(ED);edKbShow()});
 document.querySelectorAll("#ed [data-f]").forEach(el=>{const h=()=>{if(!ED)return;const f=el.dataset.f,v=el.value;
 if(v==="__new__"&&el.tagName==="SELECT"){el.value=ED[f]||"";optAsk(f);return}
 if(f==="date"){if(ED.date===v)return;ED.date=v;ED.dateSrc="man"}
@@ -1044,10 +1053,14 @@ lines.forEach((l,i)=>x.fillText(l,px,py+(i+0.5)*lh*PX))}
    工事情報の「工事黒板を付ける」をオンにすると、写真の隅に黒板(工事名・工種・場所・内容・日付・施工者)を重ねて、
    一覧・編集画面・台帳(PDF・Excel)に出す。保存してある写真そのものは変えない(AIに送るのも元の写真)。
    PJ.kb={on,pos}  pos: lt 左上 / rt 右上 / lb 左下 / rb 右下
-   p.kb  写真ごとの指定。位置、または "off"(付けない)。空なら工事の設定どおり */
-const KBP=["lt","rt","lb","rb"],KB_W=0.4,KB_H=0.7; /* 黒板の幅 = KB_W×√(写真の幅×高さ)、高さ = 幅×KB_H */
+   PJ.kb.size 大きさ: s 小 / m 中 / l 大
+   p.kb  写真ごとの指定。位置、または "off"(付けない)。空なら工事の設定どおり。p.kbSize は写真ごとの大きさ(空なら工事の設定どおり)
+   黒板は写真の隅にぴったり合わせる(すき間なし) */
+const KBP=["lt","rt","lb","rb"],KBZ={s:0.3,m:0.4,l:0.52},KB_H=0.7; /* 黒板の幅 = KBZ[大きさ]×√(写真の幅×高さ)、高さ = 幅×KB_H */
 function kbPj(){return !!(PJ&&PJ.kb&&PJ.kb.on)}
 function kbPjPos(){const v=PJ&&PJ.kb&&PJ.kb.pos;return KBP.indexOf(v)>=0?v:"lb"}
+function kbPjSize(){const v=PJ&&PJ.kb&&PJ.kb.size;return KBZ[v]?v:"m"}
+function kbSize(p){return KBZ[p.kbSize]?p.kbSize:kbPjSize()}
 /* この写真の黒板の位置。付けないときは "" */
 function kbPos(p){if(!kbPj())return "";const v=p.kb||"";if(v==="off")return "";return KBP.indexOf(v)>=0?v:kbPjPos()}
 /* 黒板に書く中身。工種の行には種別も、内容が空なら工程を入れる */
@@ -1080,10 +1093,10 @@ lab("日　付",ix,cy,lw);kbFit(x,f.date,vx,cy,dw-3.4*u,5.8*u,3.6*u,true);
 lab("施工者",sx,cy,sw);kbFit(x,f.company,sx+sw+1.6*u,cy,iw-lw-dw-sw-3.2*u,5.6*u,3.2*u,true);
 line(ix+lw,iy,ix+lw,iy+ih);line(sx,y,sx,y+hh);line(sx+sw,y,sx+sw,y+hh);x.restore()}
 /* 写真(幅pw×高さph)の中での黒板の場所。写真の左上からの位置と大きさを返す */
-function kbRect(pw,ph,pos){const bw=Math.min(KB_W*Math.sqrt(pw*ph),pw*0.72,ph*0.72/KB_H),bh=bw*KB_H,m=Math.min(pw,ph)*0.025;
-return {x:pos.charAt(0)==="l"?m:pw-m-bw,y:pos.charAt(1)==="t"?m:ph-m-bh,w:bw,h:bh}}
+function kbRect(pw,ph,pos,size){const bw=Math.min((KBZ[size]||KBZ.m)*Math.sqrt(pw*ph),pw*0.9,ph*0.9/KB_H),bh=bw*KB_H;
+return {x:pos.charAt(0)==="l"?0:pw-bw,y:pos.charAt(1)==="t"?0:ph-bh,w:bw,h:bh}}
 /* (px,py)に幅pw×高さphで描いた写真の上に、その写真の黒板を重ねる。付けない写真なら何もしない */
-function kbOn(x,px,py,pw,ph,p){const pos=kbPos(p);if(!pos)return;const r=kbRect(pw,ph,pos);kbDraw(x,px+r.x,py+r.y,r.w,kbFields(p))}
+function kbOn(x,px,py,pw,ph,p){const pos=kbPos(p);if(!pos)return;const r=kbRect(pw,ph,pos,kbSize(p));kbDraw(x,px+r.x,py+r.y,r.w,kbFields(p))}
 /* 黒板だけの画像(一覧・編集画面で写真に重ねて見せる用) */
 let KBCV=null;const KBC=new Map();
 function kbImg(f,w){const c=KBCV||(KBCV=document.createElement("canvas"));c.width=w;c.height=Math.round(w*KB_H);kbDraw(c.getContext("2d"),0,0,w,f);return c.toDataURL("image/jpeg",0.85)}
@@ -1201,12 +1214,12 @@ catch(e){m.textContent="書き出せませんでした: "+e.message;m.classList.
 $("bkIn").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f||BUSY)return;BUSY=true;const m=$("bkMsg");m.classList.remove("ng");
 try{m.textContent="読み込み中…";const o=JSON.parse(await f.text());if(!o||o.app!=="photo-ledger"||!Array.isArray(o.photos))throw new Error("写真台帳のバックアップファイルではないようです");
 const pj=newProject((o.project&&o.project.name||"")+"(読み込み)");pj.place=o.project&&o.project.place||"";pj.company=o.project&&o.project.company||"";pj.places=o.project&&Array.isArray(o.project.places)?o.project.places.map(String):[];pj.koshus=o.project&&Array.isArray(o.project.koshus)?o.project.koshus.map(String):[];["kouteis","kubuns"].forEach(k=>{if(o.project&&Array.isArray(o.project[k]))pj[k]=o.project[k].map(String)});
-if(o.project&&o.project.kb&&typeof o.project.kb==="object")pj.kb={on:!!o.project.kb.on,pos:KBP.indexOf(o.project.kb.pos)>=0?o.project.kb.pos:"lb"};
+if(o.project&&o.project.kb&&typeof o.project.kb==="object")pj.kb={on:!!o.project.kb.on,pos:KBP.indexOf(o.project.kb.pos)>=0?o.project.kb.pos:"lb",size:KBZ[o.project.kb.size]?o.project.kb.size:"m"};
 await DB.put("projects",pj);PJS.push(pj);let n=0;const idm={};
 for(let i=0;i<o.photos.length;i++){m.textContent="読み込み中… "+(i+1)+" / "+o.photos.length;const s=o.photos[i];if(!s||!s.img)continue;
 try{const blob=await dataURLToBlob(s.img),im=await loadImg(blob);let th;try{th=await resize(im,360,0.72)}finally{freeImg(im)}
-const p={};["w","h","date","time","dateSrc","koutei","kubun","koshu","shubetsu","basho","naiyo","biko","board","ai","aiErr","aiModel","aiAt","kb"].forEach(k=>{if(s[k]!=null)p[k]=s[k]});
-if(KBP.concat("off").indexOf(p.kb)<0)delete p.kb;
+const p={};["w","h","date","time","dateSrc","koutei","kubun","koshu","shubetsu","basho","naiyo","biko","board","ai","aiErr","aiModel","aiAt","kb","kbSize"].forEach(k=>{if(s[k]!=null)p[k]=s[k]});
+if(KBP.concat("off").indexOf(p.kb)<0)delete p.kb;if(!KBZ[p.kbSize])delete p.kbSize;
 FL.forEach(([k])=>{p[k]=String(p[k]||"")});p.board=String(p.board||"");
 p.id=uid();if(s.id!=null)idm[String(s.id)]=p.id;p.pj=pj.id;p.created=stamp();p.tb=await th.blob.arrayBuffer();p.man=s.man&&typeof s.man==="object"?s.man:{};await DB.addPhoto(p,blob);n++}catch(err){console.warn(err)}}
 /* 手で入れ替えた並びも、新しい写真のidに付け替えて引き継ぐ */
