@@ -86,11 +86,13 @@ label.l{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px;font-wei
 .ph.dgsrc{opacity:.35}
 .ph.dgt{border-color:var(--wa);box-shadow:0 0 0 3px var(--wa)}
 .lnk{appearance:none;-webkit-appearance:none;border:0;background:transparent;font:inherit;font-size:13px;color:var(--acc);text-decoration:underline;padding:6px 2px;cursor:pointer;white-space:nowrap}
-.ph .st{position:absolute;left:6px;bottom:6px;font-size:11px;border-radius:6px;padding:1px 7px;font-weight:700;color:#fff}
+.ph .st{position:absolute;left:6px;bottom:6px;font-size:12px;line-height:1.5;border-radius:8px;padding:3px 9px;font-weight:700;color:#fff;box-shadow:0 0 0 1.5px rgba(255,255,255,.75)}
+.ph .st.r{left:auto;right:6px}
+.selmode .ph .st.r{display:none}
 .ph .del{position:absolute;right:4px;top:4px;width:34px;height:34px;border-radius:50%;border:0;padding:0;background:rgba(0,0,0,.58);color:#fff;font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .ph .del:active{background:#c0392b}
 .selmode .ph .del{display:none}
-.st.ok{background:#1a7f4b}.st.err{background:#c0392b}.st.skip{background:#6b7785}
+.st.ok{background:#1a7f4b}.st.err{background:#c0392b}.st.skip{background:#6b7785}.st.det{background:rgba(0,0,0,.66)}
 .ph .tx{padding:7px 9px 9px;font-size:13px;line-height:1.45;display:block}
 .ph .t0{display:block;font-size:12px;color:var(--acc);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ph .t1{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:700}
@@ -366,7 +368,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v18</p>
+<p class="note" style="text-align:center">施工写真台帳 v19</p>
 </div>
 </div>
 
@@ -530,7 +532,9 @@ function foldList(){const f=PJ&&PJ.fold&&PJ.fold[gmode()];return Array.isArray(f
 function foldToggle(k){const a=foldList().slice(),i=a.indexOf(k);if(i>=0)a.splice(i,1);else a.push(k);if(!PJ.fold||typeof PJ.fold!=="object")PJ.fold={};PJ.fold[gmode()]=a;pjSave();renderList()}
 function renderList(){if(SW&&!PH.some(p=>p.id===SW))SW=null;const a=sorted(),g=$("grid"),grp=SORT==="koshu"||SORT==="basho";let h="";
 const card=(p,i)=>{let h="";
-const q=AIQ.has(p.id),st=q?'<span class="st ok">'+(AIRUN.has(p.id)?"AI仕分け中":"AI待ち")+'</span>':p.ai==="ok"?'<span class="st ok">AI</span>':p.ai==="skip"?'<span class="st skip">手入力</span>':(p.ai==="err"?'<span class="st err">AI失敗</span>':"");
+/* 左下(黒板が左下のときは右下)の札: 状態と「›」。タップすると詳細(編集画面)が開く */
+const q=AIQ.has(p.id),sr=kbPos(p)==="lb"?" r":"",sb=(c,t)=>'<span class="st '+c+sr+'">'+t+'</span>';
+const st=q?sb("ok",AIRUN.has(p.id)?"AI仕分け中":"AI待ち"):p.ai==="ok"?sb("ok","AI 詳細 ›"):p.ai==="skip"?sb("skip","手入力 詳細 ›"):p.ai==="err"?sb("err","AI失敗 詳細 ›"):sb("det","詳細 ›");
 const kt=p.koutei||p.kubun;
 const t1=[kt,p.naiyo||p.shubetsu].filter(Boolean).join(" ・ ");
 const pk=(k,lab,v)=>'<button type="button" class="pick'+(v?"":" unset")+'" data-k="'+k+'" aria-label="'+lab+'を選ぶ"><b>'+lab+'</b><span>'+E(v||(q?(AIRUN.has(p.id)?"AIが仕分け中…":"AI待ち"):"未入力"))+'</span><i>▾</i></button>';
