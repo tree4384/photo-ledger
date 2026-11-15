@@ -161,9 +161,10 @@ padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-ri
 .gh{align-items:center!important}
 .gh .gk{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gh .ga{margin-left:auto;display:flex;gap:6px;flex:none}
-.gadd,.gdel,.gh .gall{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--acc);font:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:4px 10px;cursor:pointer;min-height:32px}
+.gadd,.gdel,.gfold,.gh .gall{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--acc);font:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:4px 10px;cursor:pointer;min-height:32px}
 .gh .gall{display:none}
 .gdel{color:var(--sub);padding:4px 10px;font-size:15px}
+.gfold{color:var(--ink);white-space:nowrap}
 .selmode .gadd,.selmode .gdel{display:none}
 .gnew{display:flex;gap:8px;margin:14px 0 4px}
 .gnew input{flex:1;min-width:0}
@@ -365,7 +366,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v17</p>
+<p class="note" style="text-align:center">施工写真台帳 v18</p>
 </div>
 </div>
 
@@ -524,6 +525,9 @@ function thumbURL(p){let u=THU.get(p.id);if(!u&&p.tb&&p.tb.byteLength){u=URL.cre
 function dropThumb(id){const u=THU.get(id);if(u){URL.revokeObjectURL(u);THU.delete(id)}}
 function gmode(){return SORT==="basho"?"basho":"koshu"}
 function gkey(p,mode){mode=mode||gmode();return mode==="basho"?((p.basho||"").trim()||"撮影箇所なし"):((p.koshu||"").trim()||"工種未入力")}
+/* まとまり(工種・場所)をたたむ: 見出しの「▲ 閉じる / ▼ 開く」。たたんだものは PJ.fold[koshu|basho]=[見出し…] に覚える */
+function foldList(){const f=PJ&&PJ.fold&&PJ.fold[gmode()];return Array.isArray(f)?f:[]}
+function foldToggle(k){const a=foldList().slice(),i=a.indexOf(k);if(i>=0)a.splice(i,1);else a.push(k);if(!PJ.fold||typeof PJ.fold!=="object")PJ.fold={};PJ.fold[gmode()]=a;pjSave();renderList()}
 function renderList(){if(SW&&!PH.some(p=>p.id===SW))SW=null;const a=sorted(),g=$("grid"),grp=SORT==="koshu"||SORT==="basho";let h="";
 const card=(p,i)=>{let h="";
 const q=AIQ.has(p.id),st=q?'<span class="st ok">'+(AIRUN.has(p.id)?"AI仕分け中":"AI待ち")+'</span>':p.ai==="ok"?'<span class="st ok">AI</span>':p.ai==="skip"?'<span class="st skip">手入力</span>':(p.ai==="err"?'<span class="st err">AI失敗</span>':"");
@@ -537,12 +541,13 @@ h+='<div class="ph'+(on?" on":"")+(SW===p.id?" sw":"")+'" role="button" tabindex
 '<span class="tx">'+pk("koshu","工種",(p.koshu||"").trim())+pk("basho","場所",(p.basho||"").trim())+
 (t1?'<span class="t1">'+E(t1)+'</span>':"")+'<span class="t2">'+E(fmtDate(p.date))+'</span></span></div>';return h};
 if(grp){const mode=gmode(),none=mode==="basho"?"撮影箇所なし":"工種未入力",keys=(mode==="basho"?placeOrder(PH):koshuKeys(PH)).slice();
-if(a.some(p=>gkey(p)===none))keys.push(none);let n=0;
+if(a.some(p=>gkey(p)===none))keys.push(none);let n=0;const fold=new Set(foldList());
 keys.forEach(k=>{const ps=a.filter(p=>gkey(p)===k);
 h+='<div class="gh"><span class="gk">'+E(k)+'</span><span class="note">'+(ps.length?ps.length+'枚':'写真なし')+'</span><span class="ga">'+
 (k!==none?'<button type="button" class="gadd" data-g="'+E(k)+'" aria-label="'+E(k)+'に写真を追加">＋ 写真</button>':'')+
-(ps.length?'<button type="button" class="gall" data-g="'+E(k)+'">全部選ぶ</button>':'<button type="button" class="gdel" data-g="'+E(k)+'" aria-label="'+E(k)+'を消す">×</button>')+'</span></div>';
-ps.forEach(p=>{h+=card(p,n++)})})}
+(ps.length?'<button type="button" class="gall" data-g="'+E(k)+'">全部選ぶ</button><button type="button" class="gfold" data-g="'+E(k)+'" aria-expanded="'+!fold.has(k)+'">'+(fold.has(k)?"▼ 開く":"▲ 閉じる")+'</button>':'<button type="button" class="gdel" data-g="'+E(k)+'" aria-label="'+E(k)+'を消す">×</button>')+'</span></div>';
+/* たたんだまとまりは写真を出さない(No.は飛ばさずに数える) */
+if(fold.has(k))n+=ps.length;else ps.forEach(p=>{h+=card(p,n++)})})}
 else a.forEach((p,i)=>{h+=card(p,i)});
 g.innerHTML=h;kbFill();$("empty").hidden=a.length>0;g.classList.toggle("swmode",!!SW);$("ordReset").hidden=!!SEL||!hasOrd();
 $("gnew").hidden=!grp;$("gnewIn").placeholder=gmode()==="basho"?"新しい場所を作る(例: 1階 電気室)":"新しい工種を作る(例: 電灯設備)";
@@ -727,6 +732,7 @@ const gd=e.target.closest(".gdel");if(gd){gForget(gmode(),gd.dataset.g);return}
 const b=e.target.closest(".ph");if(!b)return;
 const pkb=e.target.closest(".pick");if(pkb){const p=PH.find(x=>x.id===b.dataset.id);if(p)openPk(p,pkb.dataset.k);return}
 if(e.target.closest(".del")){const p=PH.find(x=>x.id===b.dataset.id);if(p)softDel(p);return}openEd(b.dataset.id)});
+$("grid").addEventListener("click",e=>{const f=e.target.closest(".gfold");if(!f)return;e.stopPropagation();foldToggle(f.dataset.g)},true);
 $("grid").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("ph")){e.preventDefault();e.target.click()}});
 /* 削除: すぐ一覧から消し、7秒は「元に戻す」で戻せる。そのあと(またはアプリを閉じたとき)本当に消す */
 let DEL=[],delT=null;
