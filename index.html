@@ -236,7 +236,9 @@ a{color:var(--acc)}
 <div><label class="l" for="p-place">工事場所</label><input type="text" id="p-place" data-p="place" autocomplete="off" placeholder="例: 東京都○○区"></div>
 <div><label class="l" for="p-company">施工者</label><input type="text" id="p-company" data-p="company" autocomplete="off" placeholder="会社名"></div>
 </div>
-<p class="note">工事名・工事場所・施工者は台帳の上に入ります。</p>
+<div class="opts" id="coList" style="margin-top:8px"></div>
+<div class="btns" style="margin-top:8px"><button type="button" class="btn sm" id="coSave" hidden>この施工者を保存</button></div>
+<p class="note">工事名・工事場所・施工者は台帳の上に入ります。保存した施工者は、ほかの工事でもタップするだけで入ります。</p>
 <div class="btns"><button type="button" class="btn sm danger" id="pjDel">この工事をリセット</button></div>
 </details>
 </section>
@@ -368,7 +370,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v20</p>
+<p class="note" style="text-align:center">施工写真台帳 v21</p>
 </div>
 </div>
 
@@ -565,7 +567,7 @@ if(SEL)selShow()}
 function renderPj(){const s=$("pjSel");
 s.innerHTML=PJS.map(p=>'<option value="'+p.id+'">'+E(p.name||"(工事名なし)")+'</option>').join("")+'<option value="__new">＋ 新しい工事を追加</option>';
 s.value=PJ.id;
-document.querySelectorAll("#pjInfo [data-p]").forEach(el=>{if(document.activeElement!==el)el.value=PJ[el.dataset.p]||""});pjSumShow();kbShow();
+document.querySelectorAll("#pjInfo [data-p]").forEach(el=>{if(document.activeElement!==el)el.value=PJ[el.dataset.p]||""});pjSumShow();kbShow();coShow();
 if(!(PJ.name||"").trim())$("pjInfo").open=true}
 function pjSumShow(){$("pjSum").textContent=[(PJ.name||"").trim()||"工事名なし",(PJ.company||"").trim()].filter(Boolean).join(" ・ ")}
 function renderAll(){renderPj();renderList()}
@@ -602,8 +604,18 @@ function pjSave(){clearTimeout(pjT);const p=PJ;pjT=setTimeout(()=>{DB.put("proje
 $("pjSel").addEventListener("change",async e=>{const v=e.target.value;if(v==="__new"){await addProject();$("pjInfo").open=true;$("p-name").focus()}else await switchPj(v)});
 document.querySelectorAll("#pjInfo [data-p]").forEach(el=>el.addEventListener("input",()=>{PJ[el.dataset.p]=el.value;pjSave();pjSumShow();
 if(el.dataset.p==="name"){const o=$("pjSel").querySelector('option[value="'+PJ.id+'"]');if(o)o.textContent=PJ.name||"(工事名なし)"}
+if(el.dataset.p==="company")coShow();
 /* 工事名・施工者は黒板にも入るので、打ち終わったら黒板を描き直す */
 if(kbPj()&&el.dataset.p!=="place"){clearTimeout(kbT);kbT=setTimeout(()=>{kbShow();renderList()},600)}}));
+/* 施工者を保存しておく: localStorage("pl-companies")。工事をまたいで使え、リセットしても残る。タップで施工者の欄に入る。×で消す */
+function coAll(){try{const a=JSON.parse(ls("pl-companies")||"[]");return Array.isArray(a)?uniq(a.map(String)):[]}catch(e){return []}}
+function coShow(){const cur=(PJ.company||"").trim(),a=coAll();
+$("coList").innerHTML=a.map(v=>'<span class="pc"><button type="button" class="opt" data-v="'+E(v)+'" aria-pressed="'+(v===cur)+'">'+E(v)+'</button><button type="button" class="rm" data-rm="'+E(v)+'" aria-label="'+E(v)+'を消す">×</button></span>').join("");
+$("coSave").hidden=!cur||a.indexOf(cur)>=0}
+$("coSave").addEventListener("click",()=>{const cur=(PJ.company||"").trim();if(!cur)return;const a=coAll();if(a.indexOf(cur)<0)a.push(cur);ls("pl-companies",JSON.stringify(a));coShow();ban("施工者「"+cur+"」を保存しました",null,3000)});
+$("coList").addEventListener("click",e=>{const rm=e.target.closest("[data-rm]");
+if(rm){ls("pl-companies",JSON.stringify(coAll().filter(v=>v!==rm.dataset.rm)));coShow();return}
+const o=e.target.closest(".opt");if(!o)return;PJ.company=o.dataset.v;$("p-company").value=PJ.company;pjSave();pjSumShow();coShow();if(kbPj()){kbShow();renderList()}});
 /* 工事黒板のボタン(工事名の下)。オンにすると位置の選択と見本が出る */
 function kbShow(){const on=kbPj(),b=$("kbBtn");b.setAttribute("aria-pressed",String(on));b.textContent=on?"✓ 工事黒板を付けています":"工事黒板を付ける";$("kbBox").hidden=!on;if(!on)return;
 document.querySelectorAll("#kbSeg button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===kbPjPos())));
