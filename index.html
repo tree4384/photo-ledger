@@ -30,7 +30,7 @@
 html{background:var(--bg);-webkit-text-size-adjust:100%}
 html.lock,html.lock body{overflow:hidden}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;
-padding:calc(env(safe-area-inset-top,0px) + 14px) max(14px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 100px) max(14px,env(safe-area-inset-left,0px))}
+padding:calc(env(safe-area-inset-top,0px) + 14px) max(14px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 150px) max(14px,env(safe-area-inset-left,0px))}
 main{max-width:980px;margin:0 auto}
 h1,h2,h3{line-height:1.35}
 .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -116,11 +116,13 @@ padding:14px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-
 .empty p{margin:4px 0}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);
 padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
-.bar .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.bar .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.bar .in>*{grid-column:span 2}
+.bar .in>.b2{grid-column:span 3}
 #barSel{max-width:980px;margin:0 auto}
-.bar .btn{padding:10px 2px;font-size:14px;min-height:48px;position:relative;white-space:nowrap}
+.bar .btn{padding:8px 2px;font-size:14px;min-height:44px;position:relative;white-space:nowrap}
 .bar .btn .cnt{position:absolute;top:-7px;right:-3px;min-width:21px;height:21px;border-radius:11px;background:#c0392b;color:#fff;font-size:12px;line-height:21px;padding:0 6px;font-weight:700}
-.ban{position:fixed;left:12px;right:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:25;max-width:640px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 10px 10px 14px;display:flex;gap:8px;align-items:center;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.ban{position:fixed;left:12px;right:12px;bottom:calc(128px + env(safe-area-inset-bottom,0px));z-index:25;max-width:640px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 10px 10px 14px;display:flex;gap:8px;align-items:center;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.22)}
 .ban .msg{flex:1}
 .ban button{appearance:none;font:inherit;font-weight:700;border:0;border-radius:9px;padding:7px 11px;cursor:pointer;background:var(--bg);color:var(--ink);white-space:nowrap}
 .ban button.x{background:transparent;color:var(--bg);padding:4px 6px;font-size:18px;line-height:1}
@@ -225,15 +227,14 @@ a{color:var(--acc)}
 <div class="seg kbseg" id="kbSeg" role="group" aria-labelledby="kbSegL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button></div>
 <p class="pks" id="kbSizeL">黒板の大きさ</p>
 <div class="seg" id="kbSize" role="group" aria-labelledby="kbSizeL"><button type="button" data-v="s">小</button><button type="button" data-v="m">中</button><button type="button" data-v="l">大</button></div></div></div>
-<div class="btns" style="margin-top:10px"><button type="button" class="btn sm" id="kbSave">黒板つきの写真を保存</button></div>
-<p class="note">写真の隅に工事黒板を重ねて、一覧と台帳(PDF・Excel)に出します。工事名と施工者はここの内容、工種・場所・内容・日付は写真ごとの欄が入ります(上は見本)。写真ごとに位置・大きさを変えたり外したりするときは、写真を開いて選びます。保存してある元の写真は変わりません。もう一度押すと外れます。「黒板つきの写真を保存」は、黒板を付けた写真だけを画像(JPEG)で書き出します。</p>
+<p class="note">写真の隅に工事黒板を重ねて、一覧と台帳(PDF・Excel)に出します。工事名と施工者はここの内容、工種・場所・内容・日付は写真ごとの欄が入ります(上は見本)。写真ごとに位置・大きさを変えたり外したりするときは、写真を開いて選びます。保存してある元の写真は変わりません。もう一度押すと外れます。画面の下の「黒板写真のみ保存」は、黒板を付けた写真だけを画像(JPEG)で書き出します。</p>
 </div></div>
 <div class="row2">
 <div><label class="l" for="p-place">工事場所</label><input type="text" id="p-place" data-p="place" autocomplete="off" placeholder="例: 東京都○○区"></div>
 <div><label class="l" for="p-company">施工者</label><input type="text" id="p-company" data-p="company" autocomplete="off" placeholder="会社名"></div>
 </div>
 <p class="note">工事名・工事場所・施工者は台帳の上に入ります。</p>
-<div class="btns"><button type="button" class="btn sm danger" id="pjDel">この工事を削除</button></div>
+<div class="btns"><button type="button" class="btn sm danger" id="pjDel">この工事をリセット</button></div>
 </details>
 </section>
 
@@ -258,7 +259,8 @@ a{color:var(--acc)}
 <label class="btn pri" id="addBtn">＋ 写真<input type="file" id="fileIn" class="vh" accept="image/*" multiple></label>
 <button type="button" class="btn" id="aiBtn">AI仕分け</button>
 <button type="button" class="btn" id="asBtn">振り分け</button>
-<button type="button" class="btn" id="exBtn">台帳出力</button>
+<button type="button" class="btn b2" id="exBtn">写真台帳を作成</button>
+<button type="button" class="btn b2" id="imgBtn">黒板写真のみ保存</button>
 </div>
 <div id="barSel" hidden><p class="msg" id="selMsg"></p><div class="row"><button type="button" class="btn" id="selCancel">やめる</button><button type="button" class="btn pri" id="selApply">反映する</button></div></div>
 </nav>
@@ -363,7 +365,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v16</p>
+<p class="note" style="text-align:center">施工写真台帳 v17</p>
 </div>
 </div>
 
@@ -417,6 +419,8 @@ img:async id=>{const r=await rq((await db()).transaction("images").objectStore("
 put:(s,v)=>wtx([s],t=>t.objectStore(s).put(v)),
 addPhoto:(m,img)=>wtx(["photos","images"],t=>{t.objectStore("photos").put(m);t.objectStore("images").put({id:m.id,img})}),
 delPhoto:id=>wtx(["photos","images"],t=>{t.objectStore("photos").delete(id);t.objectStore("images").delete(id)}),
+/* リセット: 工事は残したまま中身を空にして、写真を全部消す */
+resetProject:(np,ids)=>wtx(["projects","photos","images"],t=>{t.objectStore("projects").put(np);ids.forEach(id=>{t.objectStore("photos").delete(id);t.objectStore("images").delete(id)})}),
 delProject:(pj,ids)=>wtx(["projects","photos","images"],t=>{t.objectStore("projects").delete(pj);ids.forEach(id=>{t.objectStore("photos").delete(id);t.objectStore("images").delete(id)})})};
 
 /* ===== 状態 ===== */
@@ -579,7 +583,10 @@ if(buf){try{const im=await loadImg(new Blob([buf],{type:"image/jpeg"}));freeImg(
 /* サムネイルが読めなければ、写真本体から作り直す */
 if(!buf){try{const img=await DB.img(p.id);if(img){const im=await loadImg(img);try{const th=await resize(im,360,0.72);buf=await th.blob.arrayBuffer()}finally{freeImg(im)}}}catch(e){console.warn(e)}}
 delete p.thumb;if(buf)p.tb=buf;try{await DB.put("photos",p)}catch(e){}}
-async function switchPj(id){const p=PJS.find(x=>x.id===id);if(!p)return;if(SEL)selEnd();if(SW){SW=null;banOff()}if(DEL.length)await commitDel();PJ=p;ls("pl-cur",p.id);await loadPhotos();renderAll()}
+async function switchPj(id){const p=PJS.find(x=>x.id===id);if(!p)return;if(SEL)selEnd();if(SW){SW=null;banOff()}if(DEL.length)await commitDel();
+/* 離れる工事が空っぽ(写真なし・工事情報なし)なら一覧から片付ける。リセットした工事や、作っただけの工事が残らないように */
+{const o=PJ;if(o&&o!==p&&PJS.indexOf(o)>=0&&!PH.length&&!["name","place","company"].some(k=>(o[k]||"").trim())){clearTimeout(pjT);try{await DB.delProject(o.id,[]);PJS=PJS.filter(x=>x!==o)}catch(e){}}}
+PJ=p;ls("pl-cur",p.id);await loadPhotos();renderAll()}
 async function addProject(){const p=newProject("");await DB.put("projects",p);PJS.push(p);await switchPj(p.id);return p}
 let pjT=null,kbT=null;
 function pjSave(){clearTimeout(pjT);const p=PJ;pjT=setTimeout(()=>{DB.put("projects",p).catch(e=>ban("保存できませんでした: "+e.message))},400)}
@@ -1013,7 +1020,7 @@ else $("exCount").textContent=n?n+"枚 ・ A4で"+Math.ceil(n/3)+"ページ(並�
 $("exGo").disabled=!n||BUSY}
 function fmtSaved(){const f=ls("pl-fmt");return ["pdf","xlsx","both"].indexOf(f)>=0?f:"both"}
 /* fmt="img" で開くと「黒板つき写真」が選ばれた状態になる(工事情報の「黒板つきの写真を保存」から) */
-function openEx(fmt){if(!PH.length){ban("先に写真を追加してください",null,3000);return}flush();FMT=fmt==="img"&&kbPj()?"img":fmtSaved();
+function openEx(fmt){if(!PH.length){ban("先に写真を追加してください",null,3000);return}flush();banOff();FMT=fmt==="img"&&kbPj()?"img":fmtSaved();
 $("exKLabel").textContent=gmode()==="basho"?"撮影箇所":"工種";
 const ks=uniq(sorted().map(p=>gkey(p)));EXK=new Set(ks);const cnt={};PH.forEach(p=>{const k=gkey(p);cnt[k]=(cnt[k]||0)+1});
 $("exKoshu").innerHTML=ks.map(k=>'<label class="chip"><input type="checkbox" checked value="'+E(k)+'">'+E(k)+'<span class="note">'+cnt[k]+'</span></label>').join("");
@@ -1021,7 +1028,9 @@ $("exMsg").textContent="";$("exMsg").classList.remove("ng");$("exProg").hidden=t
 $("exBtn").addEventListener("click",openEx);
 $("exBack").addEventListener("click",()=>{if(BUSY)return;closeSheet("ex")});
 $("fmtSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;FMT=b.dataset.v;if(FMT!=="img")ls("pl-fmt",FMT);clearFiles($("exFiles"));$("exMsg").textContent="";$("exProg").hidden=true;exRender()});
-$("kbSave").addEventListener("click",()=>{if(BUSY||AIBUSY){ban("ほかの処理が終わってから保存してください",null,4000);return}openEx("img")});
+$("imgBtn").addEventListener("click",()=>{if(!PH.length){ban("先に写真を追加してください",null,3000);return}if(BUSY||AIBUSY){ban("ほかの処理が終わってから保存してください",null,4000);return}
+/* 黒板をまだ付けていないときは、その場で付けられるようにする */
+if(!kbPj()){$("pjInfo").open=true;ban("まだ工事黒板を付けていません。付けてから保存しますか?",{label:"黒板を付ける",fn:()=>{banOff();$("kbBtn").click();openEx("img")}},9000);return}openEx("img")});
 $("exKoshu").addEventListener("change",e=>{const c=e.target;if(c.checked)EXK.add(c.value);else EXK.delete(c.value);exRender()});
 $("exFrom").addEventListener("input",exRender);$("exTo").addEventListener("input",exRender);
 function exProg(t,r){$("exMsg").textContent=t;$("exProg").hidden=false;$("exBar").style.width=Math.round((r||0)*100)+"%"}
@@ -1225,10 +1234,14 @@ function openSt(){flush();
 keyShow();$("exOn").checked=exOn();$("aiKMsg").textContent="";$("aiKMsg").classList.remove("ng");$("bkMsg").textContent="";clearFiles($("bkFiles"));thShow();usage();openSheet("st")}
 $("stBtn").addEventListener("click",openSt);
 $("stBack").addEventListener("click",()=>{closeSheet("st");renderAll()});
-$("pjDel").addEventListener("click",async()=>{if(!confirm("「"+(PJ.name||"工事名なし")+"」と写真"+PH.length+"枚を、この端末から削除します。元に戻せません。よろしいですか?"))return;
-try{await DB.delProject(PJ.id,PH.map(p=>p.id))}catch(e){ban("削除できませんでした: "+e.message);return}
-PJS=PJS.filter(p=>p!==PJ);if(!PJS.length){const p=newProject("");await DB.put("projects",p);PJS.push(p)}
-await switchPj(PJS[PJS.length-1].id);ban("工事を削除しました",null,4000)});
+/* この工事をリセット: 写真を全部消し、工事情報・黒板の設定・作った工種や場所も消して、最初の状態に戻す(工事そのものは一覧に残る) */
+$("pjDel").addEventListener("click",async()=>{if(BUSY||AIBUSY){ban("ほかの処理が終わってからリセットしてください",null,4000);return}
+if(!confirm("「"+(PJ.name||"工事名なし")+"」をリセットします。写真"+PH.length+"枚と、工事情報・黒板の設定を、この端末から消して最初の状態に戻します。元に戻せません。よろしいですか?"))return;
+if(SEL)selEnd();SW=null;clearTimeout(delT);delT=null;clearTimeout(pjT);DT.forEach(t=>clearTimeout(t));DT.clear();
+const ids=PH.concat(DEL).map(p=>p.id),old=PJ,np={id:old.id,name:"",place:"",company:"",created:old.created};
+try{await DB.resetProject(np,ids)}catch(e){ban("リセットできませんでした: "+e.message);return}
+DEL=[];KBC.clear();EXC.clear();PJS[PJS.indexOf(old)]=np;PJ=np;await loadPhotos();
+document.querySelectorAll("#pjInfo [data-p]").forEach(el=>{el.value=""});renderAll();$("pjInfo").open=true;ban("リセットしました",null,4000)});
 function keyShow(){const k=keyGet(),i=$("aiKey");i.value="";i.placeholder=k?"保存済み(…"+k.slice(-4)+")":"APIキーを貼り付け";$("aiDel").hidden=!k}
 $("aiSave").addEventListener("click",()=>{const v=$("aiKey").value.replace(/\s+/g,"");const m=$("aiKMsg");m.classList.remove("ng");
 if(!v){m.textContent="キーが入っていません。貼り付けてから「保存」を押してください。";return}keySet(v);keyShow();m.textContent="保存しました。";renderList()});
