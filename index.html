@@ -368,7 +368,7 @@ a{color:var(--acc)}
 <section class="card"><h3>表示</h3>
 <div class="seg" id="thSeg" role="group" aria-label="テーマ"><button type="button" data-th="auto">自動</button><button type="button" data-th="light">ライト</button><button type="button" data-th="dark">ダーク</button></div>
 </section>
-<p class="note" style="text-align:center">施工写真台帳 v19</p>
+<p class="note" style="text-align:center">施工写真台帳 v20</p>
 </div>
 </div>
 
@@ -532,9 +532,9 @@ function foldList(){const f=PJ&&PJ.fold&&PJ.fold[gmode()];return Array.isArray(f
 function foldToggle(k){const a=foldList().slice(),i=a.indexOf(k);if(i>=0)a.splice(i,1);else a.push(k);if(!PJ.fold||typeof PJ.fold!=="object")PJ.fold={};PJ.fold[gmode()]=a;pjSave();renderList()}
 function renderList(){if(SW&&!PH.some(p=>p.id===SW))SW=null;const a=sorted(),g=$("grid"),grp=SORT==="koshu"||SORT==="basho";let h="";
 const card=(p,i)=>{let h="";
-/* 左下(黒板が左下のときは右下)の札: 状態と「›」。タップすると詳細(編集画面)が開く */
+/* 左下(黒板が左下のときは右下)の札「タップ詳細 ›」。タップすると詳細(編集画面)が開く。色で状態が分かる(緑=AI済み、灰=手入力、赤=AI失敗、黒=まだ) */
 const q=AIQ.has(p.id),sr=kbPos(p)==="lb"?" r":"",sb=(c,t)=>'<span class="st '+c+sr+'">'+t+'</span>';
-const st=q?sb("ok",AIRUN.has(p.id)?"AI仕分け中":"AI待ち"):p.ai==="ok"?sb("ok","AI 詳細 ›"):p.ai==="skip"?sb("skip","手入力 詳細 ›"):p.ai==="err"?sb("err","AI失敗 詳細 ›"):sb("det","詳細 ›");
+const st=q?sb("ok",AIRUN.has(p.id)?"AI仕分け中":"AI待ち"):p.ai==="ok"?sb("ok","タップ詳細 ›"):p.ai==="skip"?sb("skip","タップ詳細 ›"):p.ai==="err"?sb("err","AI失敗 タップ詳細 ›"):sb("det","タップ詳細 ›");
 const kt=p.koutei||p.kubun;
 const t1=[kt,p.naiyo||p.shubetsu].filter(Boolean).join(" ・ ");
 const pk=(k,lab,v)=>'<button type="button" class="pick'+(v?"":" unset")+'" data-k="'+k+'" aria-label="'+lab+'を選ぶ"><b>'+lab+'</b><span>'+E(v||(q?(AIRUN.has(p.id)?"AIが仕分け中…":"AI待ち"):"未入力"))+'</span><i>▾</i></button>';
