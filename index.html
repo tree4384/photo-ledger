@@ -360,8 +360,13 @@ a{color:var(--acc)}
 <p class="note">手で場所・工種・工程を決めた写真を、仕分けのたびに最大4枚、見本としていっしょに送ります。使うほど見本が増えて当たりやすくなります(そのぶん少し遅くなります)。</p>
 <p class="note">AIに送るのは、写真と、撮影箇所・工程などの欄の言葉だけです(工事名・会社名は送りません)。無料枠では、送った写真がGoogleのAIの改善に使われることがあります。</p>
 </section>
+<section class="card" id="clCard"><h3>クラウド保存</h3>
+<p class="note" style="margin-top:0">Googleでログインすると、工事と写真の情報はクラウド(Firebase)に、写真本体はあなたのGoogleドライブの「施工写真台帳(アプリ)」フォルダに保存されます。ほかのスマホでも同じアカウントでログインすれば、続きから使えます。</p>
+<p class="note" id="clMsg" role="status" style="white-space:pre-line"></p>
+<div class="btns"><button type="button" class="btn sm" id="clIn">Googleでログイン</button><button type="button" class="btn sm" id="clDrv" hidden>ドライブに接続</button><button type="button" class="btn sm" id="clOut" hidden>ログアウト</button></div>
+</section>
 <section class="card"><h3>データ</h3>
-<p class="note" style="margin-top:0">写真はこのiPhoneのこのアプリの中だけに保存されます。機種変更や万一に備えて、ときどきバックアップを書き出して「ファイル」やGoogleドライブに保存してください。</p>
+<p class="note" style="margin-top:0">ログインしていないときは、写真はこのiPhoneのこのアプリの中だけに保存されます。その場合は機種変更や万一に備えて、ときどきバックアップを書き出して「ファイル」やGoogleドライブに保存してください。</p>
 <div class="btns"><button type="button" class="btn sm" id="bkOut">この工事をバックアップ</button><label class="btn sm">バックアップを読み込む<input type="file" id="bkIn" class="vh" accept=".json,application/json"></label></div>
 <p class="note" id="bkMsg" role="status"></p>
 <ul class="files" id="bkFiles"></ul>
@@ -1258,7 +1263,7 @@ return new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.sprea
 
 /* ===== 設定 ===== */
 function openSt(){flush();
-keyShow();$("exOn").checked=exOn();$("aiKMsg").textContent="";$("aiKMsg").classList.remove("ng");$("bkMsg").textContent="";clearFiles($("bkFiles"));thShow();usage();openSheet("st")}
+keyShow();$("exOn").checked=exOn();$("aiKMsg").textContent="";$("aiKMsg").classList.remove("ng");$("bkMsg").textContent="";clearFiles($("bkFiles"));thShow();usage();csShow();fbInit().catch(()=>{});openSheet("st")}
 $("stBtn").addEventListener("click",openSt);
 $("stBack").addEventListener("click",()=>{closeSheet("st");renderAll()});
 /* この工事をリセット: 写真を全部消し、工事情報・黒板の設定・作った工種や場所も消して、最初の状態に戻す(工事そのものは一覧に残る) */
@@ -1307,13 +1312,204 @@ function thShow(){const t=thCur();document.querySelectorAll("#thSeg button").for
 $("thSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const t=b.dataset.th;
 if(t==="auto"){ls("app-theme",null);document.documentElement.removeAttribute("data-theme")}else{ls("app-theme",t);document.documentElement.setAttribute("data-theme",t)}thShow()});
 
+/* ===== クラウド保存(Googleでログイン) =====
+   工事 → Firebase(Firestore) users/<uid>/pl-projects/<工事id>
+   写真の情報(工種・場所・黒板の文字など)と小さいサムネイル → users/<uid>/pl-photos/<写真id>
+   写真本体(長辺1600px) → その人のGoogleドライブ「施工写真台帳(アプリ)」フォルダ
+   - 端末の保存(IndexedDB)はこれまでどおり。保存するたびに _u(変えた時刻)を付け、クラウドに上げたら _c に同じ値を入れる
+   - 消した写真・工事は「消した印」(del)を残して、ほかの端末からも消す
+   - 写真の情報は「前回から変わった分」だけ受け取る(st = サーバーの時刻)。読み込み回数を増やさないため
+   - 写真本体は、ほかの端末では必要になったとき(編集画面・AI・出力)にドライブから取ってくる
+   - このスマホで最初にログインした人のアカウントだけで同期する(別の人の写真が混ざらないように) */
+const FB_CFG={apiKey:"AIzaSyADD0DQ-xh63pkPk3ZarhGg6BYQeFUZtoU",authDomain:"fire-34a05.firebaseapp.com",projectId:"fire-34a05",storageBucket:"fire-34a05.firebasestorage.app",messagingSenderId:"465604822335",appId:"1:465604822335:web:b125c2bedf12617c9f3f8a"};
+const DFOLDER="施工写真台帳(アプリ)",DRV="https://www.googleapis.com/drive/v3/files",DRU="https://www.googleapis.com/upload/drive/v3/files";
+const CS={user:null,col:null,busy:false,again:false,t:null,pend:new Set(),pendPj:new Set(),done:0,total:0,needDrive:false,apiOff:false,err:"",other:"",unsub:[],banned:false};
+let fbAuth=null,fbDb=null,fbReady=null;
+function fbLoad(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src="fb/"+src;s.onload=res;s.onerror=()=>{s.remove();rej(new Error("load "+src))};document.head.appendChild(s)})}
+function fbInit(){if(fbReady)return fbReady;
+fbReady=fbLoad("firebase-app-compat.js").then(()=>Promise.all([fbLoad("firebase-auth-compat.js"),fbLoad("firebase-firestore-compat.js")])).then(()=>{
+if(!firebase.apps.length)firebase.initializeApp(FB_CFG);fbAuth=firebase.auth();fbDb=firebase.firestore();
+try{fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+fbAuth.getRedirectResult().then(r=>{if(r&&r.credential&&r.credential.accessToken){tokSet(r.credential.accessToken);csKick(0)}}).catch(()=>{});
+fbAuth.onAuthStateChanged(u=>{csUser(u).catch(e=>console.warn(e))});csShow()});
+fbReady.catch(()=>{fbReady=null;csShow()});return fbReady}
+
+/* ドライブを使う許可(アクセストークン)。1時間くらいで切れるので、切れたら「ドライブに接続」を押してもらう */
+function tokGet(){try{const o=JSON.parse(localStorage.getItem("pl-gtok")||"null");if(o&&o.t&&o.exp>Date.now()+60000)return o.t}catch(e){}return null}
+function tokSet(t){try{if(t)localStorage.setItem("pl-gtok",JSON.stringify({t,exp:Date.now()+55*60000}));else localStorage.removeItem("pl-gtok")}catch(e){}if(t)CS.needDrive=false}
+function gProv(hint){const p=new firebase.auth.GoogleAuthProvider();p.addScope("https://www.googleapis.com/auth/drive.file");p.setCustomParameters(hint?{login_hint:hint}:{prompt:"select_account"});return p}
+function popupErr(e){const c=(e&&e.code)||"";if(/popup-closed|cancelled-popup/.test(c))return;ban("ログインできませんでした("+(c||e.message||"不明")+")",null,6000)}
+/* ボタンを押した直後にポップアップを開く(iPhoneは、少しでも待つとポップアップを止めてしまう) */
+function csSignIn(){if(!fbAuth){ban("クラウドの準備中です。電波のある場所で少し待ってから、もう一度押してください",null,5000);fbInit().catch(()=>{});return}
+const p=gProv();fbAuth.signInWithPopup(p).then(r=>{if(r&&r.credential&&r.credential.accessToken)tokSet(r.credential.accessToken);csKick(0)}).catch(e=>{
+const c=(e&&e.code)||"";if(/popup-blocked|operation-not-supported|web-storage-unsupported/.test(c))return fbAuth.signInWithRedirect(p);popupErr(e)}).finally(csShow)}
+function csDriveConnect(){const u=fbAuth&&fbAuth.currentUser;if(!u){csSignIn();return}
+u.reauthenticateWithPopup(gProv(u.email||"")).then(r=>{if(r&&r.credential&&r.credential.accessToken)tokSet(r.credential.accessToken);CS.apiOff=false;csKick(0)}).catch(popupErr).finally(csShow)}
+function csSignOut(){if(!fbAuth)return;if(!confirm("ログアウトしますか?(この端末の写真はそのまま残ります。ログインし直せば、続きから同期します)"))return;tokSet(null);fbAuth.signOut()}
+
+function csOwner(){try{return JSON.parse(localStorage.getItem("pl-owner")||"null")}catch(e){return null}}
+async function csUser(u){CS.unsub.forEach(f=>{try{f()}catch(e){}});CS.unsub=[];CS.user=null;CS.col=null;CS.other="";
+if(!u){csShow();return}
+const o=csOwner();
+if(o&&o.uid!==u.uid){CS.other="このスマホの写真台帳は "+(o.email||"別のアカウント")+" で同期しています。そのアカウントでログインし直してください。";csShow();return}
+if(!o)try{localStorage.setItem("pl-owner",JSON.stringify({uid:u.uid,email:u.email||""}))}catch(e){}
+CS.user=u;const base=fbDb.collection("users").doc(u.uid);CS.col={pj:base.collection("pl-projects"),ph:base.collection("pl-photos")};
+await csScan();csListen();csKick(0);csShow()}
+
+/* ===== 端末の保存に「変えた時刻」を付ける ===== */
+const RAW=Object.assign({},DB);
+function getRec(s,id){return db().then(d=>rq(d.transaction(s).objectStore(s).get(id)))}
+function uOf(v){return v._u||v.created||1}
+function markSynced(s,id,u){return wtx([s],t=>{const os=t.objectStore(s),r=os.get(id);r.onsuccess=()=>{const v=r.result;if(v&&uOf(v)===u){v._u=u;v._c=u;os.put(v)}}})}
+const DMAP=new Map(); /* 写真id → ドライブのファイルid(画面で持っている写真に、まだ入っていないときのため) */
+DB.put=(s,v)=>{if(s==="photos"){v._u=stamp();if(!v._d&&DMAP.has(v.id))v._d=DMAP.get(v.id);CS.pend.add(v.id)}else if(s==="projects"){v._u=stamp();CS.pendPj.add(v.id)}return RAW.put(s,v).then(r=>{csKick();return r})};
+DB.addPhoto=(m,img)=>{m._u=stamp();CS.pend.add(m.id);return RAW.addPhoto(m,img).then(r=>{csKick();return r})};
+DB.delPhoto=async id=>{let r=null;try{r=await getRec("photos",id)}catch(e){}await RAW.delPhoto(id);csGone("ph",id,r&&r._d)};
+DB.resetProject=async(np,ids)=>{const dm={};try{(await RAW.byPj(np.id)).forEach(p=>{dm[p.id]=p._d})}catch(e){}
+np._u=stamp();np._c=0;CS.pendPj.add(np.id);await RAW.resetProject(np,ids);ids.forEach(id=>csGone("ph",id,dm[id]));csKick()};
+DB.delProject=async(pj,ids)=>{const dm={};if(ids.length)try{(await RAW.byPj(pj)).forEach(p=>{dm[p.id]=p._d})}catch(e){}
+await RAW.delProject(pj,ids);ids.forEach(id=>csGone("ph",id,dm[id]));csGone("pj",pj)};
+DB.img=async id=>{const b=await RAW.img(id);if(b)return b;return csFetchImg(id)};
+/* 消した分はクラウドでも消す(電波がないときのために、端末に覚えておく) */
+function obGet(){try{const a=JSON.parse(localStorage.getItem("pl-outbox")||"[]");return Array.isArray(a)?a:[]}catch(e){return []}}
+function obSave(a){try{localStorage.setItem("pl-outbox",JSON.stringify(a))}catch(e){}}
+function csGone(k,id,d){if(k==="ph")CS.pend.delete(id);else CS.pendPj.delete(id);if(!csOwner())return;const a=obGet();a.push({k,id,d:d||""});obSave(a);csKick()}
+
+async function csScan(){(await RAW.all("projects")).forEach(p=>{if(p._c==null||p._c!==uOf(p))CS.pendPj.add(p.id)});
+const d=await db();await new Promise((res,rej)=>{const r=d.transaction("photos").objectStore("photos").openCursor();
+r.onsuccess=()=>{const c=r.result;if(!c){res();return}const v=c.value;if(v._c==null||v._c!==uOf(v)||!v._d)CS.pend.add(v.id);c.continue()};r.onerror=()=>rej(r.error)})}
+
+/* ===== 上げる ===== */
+function csKick(ms){if(!CS.user)return;if(CS.busy){CS.again=true;return}clearTimeout(CS.t);CS.t=setTimeout(csRun,ms==null?1500:ms)}
+function TS(){return firebase.firestore.FieldValue.serverTimestamp()}
+function abToB64(ab){const u=new Uint8Array(ab);let s="";for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function b64ToAb(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer}
+function strip(p){const o={};for(const k in p){if(k!=="tb"&&k!=="thumb"&&k!=="_c")o[k]=p[k]}return o}
+function phDoc(p){const u=uOf(p),o=strip(p);o._u=u;return {pj:p.pj,_u:u,st:TS(),json:JSON.stringify(o),tb:p.tb&&p.tb.byteLength?abToB64(p.tb):""}}
+function pjDoc(p){const u=uOf(p),o=strip(p);o._u=u;return {_u:u,st:TS(),json:JSON.stringify(o)}}
+function pjEmpty(p){return !["name","place","company"].some(k=>(p[k]||"").trim())}
+async function pjCount(id){const d=await db();return rq(d.transaction("photos").objectStore("photos").index("pj").count(id))}
+async function csRun(){if(!CS.user)return;if(CS.busy){CS.again=true;return}CS.busy=true;CS.again=false;CS.err="";let retry=false;
+try{
+/* 1. 消した写真・工事 */
+let ob=obGet();
+for(const e of ob.slice()){if(!CS.user)break;
+if(!e.fs){await CS.col[e.k].doc(e.id).set({del:true,_u:Date.now(),st:TS()});e.fs=1;obSave(ob)}
+if(e.d){if(!tokGet()){CS.needDrive=true;continue}try{await drvFetch(DRV+"/"+encodeURIComponent(e.d),{method:"PATCH",headers:{"Content-Type":"application/json"},body:'{"trashed":true}'})}catch(err){if(err.drive)throw err}}
+ob=ob.filter(x=>x!==e);obSave(ob)}
+/* 2. 写真(本体はドライブ、情報はFirebase) */
+const ids=[...CS.pend];CS.total=ids.length;CS.done=0;csShow();
+for(const id of ids){if(!CS.user)break;
+let p=await getRec("photos",id);if(!p){CS.pend.delete(id);CS.done++;continue}
+let has=null;
+if(!p._d){has=await RAW.img(id);if(has){if(tokGet()){const fid=await drvUp(p,has);p=await setDrive(id,fid)||p}else CS.needDrive=true}}
+if(p._c==null||p._c!==uOf(p)){await CS.col.ph.doc(id).set(phDoc(p));await markSynced("photos",id,uOf(p))}
+if(p._d||!has)CS.pend.delete(id);
+CS.done++;if(CS.done%5===0)csShow()}
+/* 3. 工事(写真のない空っぽの工事は、まだ上げない) */
+for(const id of [...CS.pendPj]){if(!CS.user)break;const p=await getRec("projects",id);if(!p){CS.pendPj.delete(id);continue}
+if(p._c==null&&pjEmpty(p)&&!(await pjCount(id)))continue;
+await CS.col.pj.doc(id).set(pjDoc(p));await markSynced("projects",id,uOf(p));CS.pendPj.delete(id)}
+}catch(e){console.warn(e);
+if(e&&e.drive==="notoken"){CS.needDrive=true;CS.again=true}
+else if(e&&e.drive==="api"){CS.apiOff=true}
+else{CS.err=(e&&e.message)||String(e);retry=true}}
+finally{CS.busy=false;csShow();
+if(CS.needDrive&&!CS.banned&&[...CS.pend].length){CS.banned=true;ban("写真本体をGoogleドライブに保存するには、ドライブへの接続が必要です",{label:"接続",fn:()=>{banOff();csDriveConnect()}})}
+if(retry)setTimeout(()=>csKick(0),30000);else if(CS.again&&!CS.needDrive)csKick(500)}}
+async function setDrive(id,fid){DMAP.set(id,fid);const m=PH.find(x=>x.id===id);if(m)m._d=fid;let out=null;
+await wtx(["photos"],t=>{const os=t.objectStore("photos"),r=os.get(id);r.onsuccess=()=>{const v=r.result;if(v){v._d=fid;v._u=stamp();os.put(v);out=v}}});
+if(m&&out)m._u=out._u;return out}
+
+/* ===== Googleドライブ ===== */
+function dErr(code){const e=new Error("drive "+code);e.drive=code;return e}
+async function drvFetch(url,opt){const t=tokGet();if(!t)throw dErr("notoken");opt=opt||{};opt.headers=Object.assign({Authorization:"Bearer "+t},opt.headers||{});
+const r=await fetch(url,opt);
+if(r.status===401){tokSet(null);CS.needDrive=true;throw dErr("notoken")}
+if(r.status===403){let s="";try{s=await r.text()}catch(e){}if(/SERVICE_DISABLED|accessNotConfigured|has not been used|is disabled/.test(s))throw dErr("api");if(/insufficient|scope/i.test(s)){tokSet(null);throw dErr("notoken")}throw new Error("ドライブ 403 "+s.slice(0,120))}
+return r}
+async function drvFolder(){const k="pl-dfolder-"+CS.user.uid;let id=ls(k);if(id)return id;
+const q="name='"+DFOLDER+"' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+let r=await drvFetch(DRV+"?q="+encodeURIComponent(q)+"&fields=files(id)&spaces=drive");if(!r.ok)throw new Error("ドライブ "+r.status);
+const j=await r.json();id=j.files&&j.files[0]&&j.files[0].id;
+if(!id){r=await drvFetch(DRV+"?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:DFOLDER,mimeType:"application/vnd.google-apps.folder"})});
+if(!r.ok)throw new Error("ドライブ "+r.status);id=(await r.json()).id}
+ls(k,id);return id}
+async function drvUp(p,img){const f=await drvFolder(),pj=PJS.find(x=>x.id===p.pj);
+const name=[fsafe(pj&&pj.name)||"工事",String(p.date||"").replace(/[^0-9]/g,""),p.id].filter(Boolean).join("_")+".jpg";
+const bd="pl"+Math.random().toString(36).slice(2);
+const body=new Blob(["--"+bd+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name,parents:[f],appProperties:{pl:p.id}})+"\r\n--"+bd+"\r\nContent-Type: image/jpeg\r\n\r\n",img,"\r\n--"+bd+"--\r\n"]);
+const r=await drvFetch(DRU+"?uploadType=multipart&fields=id",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+bd},body});
+if(r.status===404){ls("pl-dfolder-"+CS.user.uid,null);throw new Error("ドライブのフォルダが見つかりません(作り直します)")}
+if(!r.ok)throw new Error("ドライブに保存できませんでした("+r.status+")");return (await r.json()).id}
+/* ほかの端末で取り込んだ写真の本体を、必要になったときにドライブから取ってくる */
+async function csFetchImg(id){if(!CS.user)return null;let p=null;try{p=await getRec("photos",id)}catch(e){}if(!p||!p._d)return null;
+if(!tokGet()){CS.needDrive=true;csShow();if(!CS.banned){CS.banned=true;ban("写真本体を読み込むには、Googleドライブへの接続が必要です",{label:"接続",fn:()=>{banOff();csDriveConnect()}})}return null}
+try{const r=await drvFetch(DRV+"/"+encodeURIComponent(p._d)+"?alt=media");if(!r.ok)return null;
+const img=new Blob([await r.blob()],{type:"image/jpeg"});await wtx(["images"],t=>t.objectStore("images").put({id,img}));return img}
+catch(e){if(e&&e.drive==="api"){CS.apiOff=true;csShow()}return null}}
+
+/* ===== 受け取る ===== */
+let inQ=Promise.resolve();
+function csListen(){const u=CS.user;if(!u)return;
+CS.unsub.push(CS.col.pj.onSnapshot(qs=>{const ch=qs.docChanges();inQ=inQ.then(()=>csApplyPj(ch)).catch(e=>console.warn(e))},e=>{console.warn(e);CS.err=e.message;csShow()}));
+const since=+(ls("pl-since-"+u.uid)||0);
+const q=since?CS.col.ph.where("st",">",firebase.firestore.Timestamp.fromMillis(Math.max(0,since-10*60000))):CS.col.ph;
+CS.unsub.push(q.onSnapshot(qs=>{const ch=qs.docChanges();inQ=inQ.then(()=>csApplyPh(ch)).catch(e=>console.warn(e))},e=>{console.warn(e);CS.err=e.message;csShow()}))}
+async function csApplyPh(ch){let touch=false,maxSt=0;
+for(const c of ch){if(c.type==="removed")continue;const d=c.doc;if(d.metadata.hasPendingWrites)continue;
+const b=d.data({serverTimestamps:"estimate"})||{};if(b.st&&b.st.toMillis)maxSt=Math.max(maxSt,b.st.toMillis());
+const loc=await getRec("photos",d.id);
+if(b.del){if(loc){await RAW.delPhoto(d.id);CS.pend.delete(d.id);dropThumb(d.id);const i=PH.findIndex(x=>x.id===d.id);if(i>=0){PH.splice(i,1);touch=true}}continue}
+if(loc&&uOf(loc)>=(+b._u||0))continue;
+let r;try{r=JSON.parse(b.json||"{}")}catch(e){continue}
+r.id=d.id;r._u=r._c=+b._u||0;if(loc&&loc._d&&!r._d)r._d=loc._d;if(r._d)DMAP.set(r.id,r._d);
+r.tb=b.tb?b64ToAb(b.tb):(loc&&loc.tb)||null;r.man=r.man||{};
+await RAW.put("photos",r);CS.pend.delete(d.id);
+if(PJ&&r.pj===PJ.id){const i=PH.findIndex(x=>x.id===r.id);if(i>=0)PH[i]=r;else if(!DEL.some(x=>x.id===r.id))PH.push(r);dropThumb(r.id);touch=true}}
+if(maxSt&&CS.user)ls("pl-since-"+CS.user.uid,String(maxSt));
+if(touch&&!BUSY)renderList();csShow()}
+async function csApplyPj(ch){let list=false,got=null;
+for(const c of ch){if(c.type==="removed")continue;const d=c.doc;if(d.metadata.hasPendingWrites)continue;const b=d.data()||{};
+const loc=PJS.find(p=>p.id===d.id)||await getRec("projects",d.id);
+if(b.del){if(loc){let ids=[];try{ids=(await RAW.byPj(d.id)).map(p=>p.id)}catch(e){}await RAW.delProject(d.id,ids);ids.forEach(dropThumb);PJS=PJS.filter(p=>p.id!==d.id);CS.pendPj.delete(d.id);list=true}continue}
+if(loc&&uOf(loc)>=(+b._u||0))continue;
+let r;try{r=JSON.parse(b.json||"{}")}catch(e){continue}
+r.id=d.id;r._u=r._c=+b._u||0;await RAW.put("projects",r);CS.pendPj.delete(d.id);
+const i=PJS.findIndex(p=>p.id===r.id);if(i>=0)PJS[i]=r;else{PJS.push(r);if(!got||r._u>got._u)got=r}if(PJ&&PJ.id===r.id)PJ=r;list=true}
+if(!list)return;PJS.sort((a,b)=>a.created-b.created);
+if(PJ&&!PJS.some(p=>p.id===PJ.id)){PH=[];if(!PJS.length){const p=newProject("");await DB.put("projects",p);PJS.push(p)}PJ=null;await switchPj(PJS[PJS.length-1].id)}
+/* 新しいスマホで初めて同期したとき: 空っぽの工事を開いていたら、届いた工事に切り替える */
+else if(got&&PJ&&pjEmpty(PJ)&&!PH.length&&!BUSY)await switchPj(got.id);
+else if(!BUSY)renderPj()}
+
+/* ===== 表示(設定の「クラウド保存」) ===== */
+function csShow(){const m=$("clMsg");if(!m)return;const u=fbAuth&&fbAuth.currentUser;let t="",ng=false;
+if(!fbAuth)t=fbReady?"準備中…":"ログインしていません。写真はこの端末の中だけに保存されています。";
+else if(CS.other){t=CS.other;ng=true}
+else if(!u)t="ログインしていません。写真はこの端末の中だけに保存されています。";
+else{const n=CS.pend.size+obGet().length;t="ログイン中: "+(u.email||"")+"\n";
+if(CS.apiOff){t+="Googleドライブに保存できません。Google CloudでDrive APIを有効にしてください。";ng=true}
+else if(CS.busy&&CS.total)t+="クラウドに保存中… "+CS.done+" / "+CS.total;
+else if(CS.err){t+="保存できませんでした。電波のある場所で、しばらくすると自動でやり直します。("+CS.err+")";ng=true}
+else if(CS.needDrive&&n)t+="写真本体をGoogleドライブに保存するには「ドライブに接続」を押してください(保存待ち "+n+" 枚)。";
+else if(n)t+="保存待ち "+n+" 件";
+else t+="すべてクラウドに保存済みです。";}
+m.textContent=t;m.classList.toggle("ng",ng);
+$("clIn").hidden=!!u&&!CS.other;$("clOut").hidden=!u;$("clDrv").hidden=!u||!!CS.other||!!tokGet()}
+$("clIn").addEventListener("click",()=>{if(CS.other&&fbAuth&&fbAuth.currentUser){fbAuth.signOut().then(csSignIn);return}csSignIn()});
+$("clDrv").addEventListener("click",csDriveConnect);
+$("clOut").addEventListener("click",csSignOut);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")csKick(0)});
+window.addEventListener("online",()=>csKick(0));
+
 /* ===== 起動 ===== */
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){flush();if(DEL.length)commitDel()}});
 window.addEventListener("pagehide",()=>{flush();if(DEL.length)commitDel()});
 async function init(){try{PJS=await DB.all("projects")}catch(e){$("bootMsg").textContent="このブラウザでは写真を保存できません(プライベートブラウズでは使えません)。";$("bootMsg").classList.add("ng");return}
 if(!PJS.length){const p=newProject("");await DB.put("projects",p);PJS=[p]}
 PJS.sort((a,b)=>a.created-b.created);const last=ls("pl-cur");PJ=PJS.find(p=>p.id===last)||PJS[PJS.length-1];
-await loadPhotos();renderAll()}
+await loadPhotos();renderAll();if(csOwner())fbInit().catch(()=>{})}
 init();
 if("serviceWorker" in navigator&&location.protocol==="https:")window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})});
 })();
