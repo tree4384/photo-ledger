@@ -194,6 +194,7 @@ a{color:var(--acc)}
 /* 工事黒板 */
 .btn[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
 .kbset{margin-top:10px}
+.blrows{display:grid;gap:6px}.blr{display:grid;grid-template-columns:38% 1fr;gap:6px}
 .blprev{display:block;width:100%;max-width:420px;margin:0 auto 12px;aspect-ratio:297/210;border:1px solid var(--line);border-radius:6px;background:#fff}
 .kbrow{display:flex;gap:12px;align-items:center;margin-top:10px}
 #kbPrev{width:48%;max-width:230px;aspect-ratio:10/7;border-radius:3px;flex:none;background:#17553a;display:block}
@@ -362,12 +363,13 @@ a{color:var(--acc)}
 <section class="card"><h3>書き込む内容</h3>
 <p class="note" style="margin-top:0">入れた欄だけ黒板に印刷されます。空けた欄は手書き用の空欄になります。</p>
 <label class="l" for="bl-name">工事名</label><input type="text" id="bl-name" data-b="name" autocomplete="off">
-<div class="row2"><div><label class="l" for="bl-koshu">工種</label><input type="text" id="bl-koshu" data-b="koshu" autocomplete="off"></div>
+<div class="row2"><div data-t="a"><label class="l" for="bl-koshu">工種</label><input type="text" id="bl-koshu" data-b="koshu" autocomplete="off"></div>
 <div><label class="l" for="bl-basho" id="bl-bashoL">場所</label><input type="text" id="bl-basho" data-b="basho" autocomplete="off"></div></div>
 <div data-t="a"><label class="l" for="bl-naiyo">内容</label><input type="text" id="bl-naiyo" data-b="naiyo" autocomplete="off"></div>
-<div data-t="b" hidden><label class="l" for="bl-sekkei">設計寸法</label><input type="text" id="bl-sekkei" data-b="sekkei" autocomplete="off">
-<label class="l" for="bl-jissoku">実測寸法</label><input type="text" id="bl-jissoku" data-b="jissoku" autocomplete="off">
-<label class="l" for="bl-biko">備考</label><input type="text" id="bl-biko" data-b="biko" autocomplete="off"></div>
+<div data-t="b" hidden><p class="l" style="margin-bottom:2px">まん中の4行(左が項目名、右が中身)</p>
+<p class="note" style="margin-top:0">項目名も書き換えられます(この端末に覚えます)。項目名を空にすると「・」だけになります。</p>
+<div class="blrows"><div class="blr"><input type="text" id="bl-l0" data-l="0" autocomplete="off" aria-label="1行目の項目名"><input type="text" id="bl-v0" data-b="v0" autocomplete="off" aria-label="1行目の中身"></div><div class="blr"><input type="text" id="bl-l1" data-l="1" autocomplete="off" aria-label="2行目の項目名"><input type="text" id="bl-v1" data-b="v1" autocomplete="off" aria-label="2行目の中身"></div><div class="blr"><input type="text" id="bl-l2" data-l="2" autocomplete="off" aria-label="3行目の項目名"><input type="text" id="bl-v2" data-b="v2" autocomplete="off" aria-label="3行目の中身"></div><div class="blr"><input type="text" id="bl-l3" data-l="3" autocomplete="off" aria-label="4行目の項目名"><input type="text" id="bl-v3" data-b="v3" autocomplete="off" aria-label="4行目の中身"></div></div>
+<button type="button" class="lnk" id="blLRe" style="margin-top:6px">項目名を元に戻す</button></div>
 <div class="row2"><div><label class="l" for="bl-date" id="bl-dateL">日付</label><input type="date" id="bl-date" data-b="date"></div>
 <div><label class="l" for="bl-company">施工者</label><input type="text" id="bl-company" data-b="company" autocomplete="off"></div></div>
 <div class="btns" style="margin-top:10px"><button type="button" class="btn sm" id="blFill">工事情報から入れる</button><button type="button" class="btn sm" id="blClr">全部空欄にする</button></div>
@@ -1111,10 +1113,12 @@ finally{BUSY=false;$("exBack").disabled=false;exRender()}});
 const BL={w:"白",g:"緑"},BLR=[13,10,10,22.6]; /* A4は手書きしやすいよう内容の行を大きく(写真の黒板は 15.2,11.4,11.4,16.2) */
 let BLC=BL[ls("pl-blc")]?ls("pl-blc"):"w";
 /* 種類: a 標準(写真の黒板と同じ) / b 寸法あり(工事名・工事場所・撮影日、・工種・設計寸法・実測寸法・備考、施工者)。localStorage pl-blt */
-const BLTY={a:"標準",b:"寸法あり"};let BLY=BLTY[ls("pl-blt")]?ls("pl-blt"):"a";
+const BLTY={a:"標準",b:"寸法あり"},BLL0=["工種","設計寸法","実測寸法","備考"]; /* 寸法ありのまん中4行の項目名(はじめ)。書き換えたものは localStorage pl-bll */
+function blLLoad(){let a=null;try{a=JSON.parse(ls("pl-bll")||"null")}catch(e){}if(!Array.isArray(a)||a.length!==4)a=BLL0;a.forEach((l,i)=>$("bl-l"+i).value=String(l||""))}
+let BLY=BLTY[ls("pl-blt")]?ls("pl-blt"):"a";
 /* 書き込む内容(入れた欄だけ印刷。空なら手書き用の空欄) */
 function blF(){const v=k=>($("bl-"+k).value||"").trim(),d=v("date");
-return {name:v("name"),koshu:v("koshu"),basho:v("basho"),naiyo:v("naiyo"),sekkei:v("sekkei"),jissoku:v("jissoku"),biko:v("biko"),company:v("company"),
+return {name:v("name"),koshu:v("koshu"),basho:v("basho"),naiyo:v("naiyo"),rows:[0,1,2,3].map(i=>[($("bl-l"+i).value||"").trim(),v("v"+i)]),company:v("company"),
 date:d?(BLY==="b"?d.replace(/^(\d+)-0?(\d+)-0?(\d+)$/,"$1年$2月$3日"):fmtDate(d)):""}}
 /* A4横(297×210mm)のキャンバスに、余白5mm(プリンターが印刷できる端まで)で黒板を目いっぱい真ん中に描く */
 function blDraw(cv,ppm){cv.width=Math.round(297*ppm);cv.height=Math.round(210*ppm);const x=cv.getContext("2d");
@@ -1132,18 +1136,21 @@ const vx=ix+lw+2.4*u,vw=iw-lw-4.4*u;let y=iy;
 line(ix+lw,iy,ix+lw,y);
 /* まん中: 箇条書き4行(線なし) */
 const bot=9.6*u,mh=iy+ih-bot-y,lh=mh/4,bl=20*u,bx2=ix+3*u;
-[["・工　　種",f.koshu],["・設計寸法",f.sekkei],["・実測寸法",f.jissoku],["・備　　考",f.biko]].forEach(([l,v],i)=>{const cy=y+lh*(i+0.5);
+/* 項目名が2文字なら「工　　種」のようにあける */
+(f.rows||BLL0.map(l=>[l,""])).forEach(([l,v],i)=>{const cy=y+lh*(i+0.5);l="・"+(l.length===2?l.charAt(0)+"　　"+l.charAt(1):l);
 x.fillStyle=t.lab;kbFit(x,l,bx2,cy,bl,4.4*u,3*u,false);x.fillStyle=t.val;kbFit(x,v,bx2+bl+1.5*u,cy,iw-bl-6*u,5.2*u,3.2*u,true)});
 y+=mh;line(ix,y,ix+iw,y);const cy=y+bot/2;lab("施工者",ix,cy,lw);kbFit(x,f.company,vx,cy,vw,5.6*u,3.4*u,true);line(ix+lw,y,ix+lw,iy+ih);x.restore()}
 function blShow(){document.querySelectorAll("#blCol button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===BLC)));
 document.querySelectorAll("#blTyp button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===BLY)));
 document.querySelectorAll("#bl [data-t]").forEach(d=>d.hidden=d.dataset.t!==BLY);$("bl-bashoL").textContent=BLY==="b"?"工事場所":"場所";$("bl-dateL").textContent=BLY==="b"?"撮影日":"日付";
 const c=document.createElement("canvas");blDraw(c,1.6);$("blPrev").src=c.toDataURL("image/png");c.width=c.height=0}
-$("blBtn").addEventListener("click",async()=>{flush();banOff();clearFiles($("blFiles"));$("blMsg").textContent="";$("blMsg").classList.remove("ng");await fontsReady();blShow();openSheet("bl")});
+$("blBtn").addEventListener("click",async()=>{flush();banOff();clearFiles($("blFiles"));$("blMsg").textContent="";$("blMsg").classList.remove("ng");await fontsReady();blLLoad();blShow();openSheet("bl")});
 let BLT=0;const blRe=()=>{clearFiles($("blFiles"));$("blMsg").textContent="";cancelAnimationFrame(BLT);BLT=requestAnimationFrame(blShow)};
 $("bl").addEventListener("input",e=>{if(e.target.dataset.b)blRe()});
 $("blFill").addEventListener("click",()=>{$("bl-name").value=(PJ.name||"").trim();$("bl-company").value=(PJ.company||"").trim();if(!$("bl-date").value)$("bl-date").value=ymd(new Date());blRe()});
 $("blClr").addEventListener("click",()=>{document.querySelectorAll("#bl [data-b]").forEach(i=>i.value="");blRe()});
+$("bl").addEventListener("input",e=>{if(e.target.dataset.l===undefined)return;ls("pl-bll",JSON.stringify([0,1,2,3].map(i=>$("bl-l"+i).value)));blRe()});
+$("blLRe").addEventListener("click",()=>{ls("pl-bll",JSON.stringify(BLL0));blLLoad();blRe()});
 $("blTyp").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;BLY=b.dataset.v;ls("pl-blt",BLY);blRe()});
 $("blBack").addEventListener("click",()=>{if(BUSY)return;closeSheet("bl")});
 $("blCol").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;BLC=b.dataset.v;ls("pl-blc",BLC);clearFiles($("blFiles"));$("blMsg").textContent="";blShow()});
