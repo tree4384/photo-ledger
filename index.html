@@ -149,6 +149,7 @@ padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-ri
 .pjc details[open] summary svg{transform:rotate(180deg)}
 .pjc details[open] summary .note{visibility:hidden}
 .opts{display:flex;flex-wrap:wrap;gap:6px}
+#pkCp{max-height:132px;overflow-y:auto}#pkCp .opt{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#pkCp .opt b{margin-right:6px}#pkCp .opt span{color:var(--sub);font-size:13px}
 .opt{appearance:none;font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 13px;min-height:38px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .opt[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--on-acc);font-weight:700}
 .opt.keep{color:var(--sub)}.opt.keep[aria-pressed="true"]{color:var(--on-acc)}
@@ -288,7 +289,7 @@ a{color:var(--acc)}
 <div class="aikey"><input id="pkNew" type="text" autocomplete="off" enterkeyhint="done"><button type="button" class="btn sm" id="pkAdd">追加</button></div>
 <div id="pkStdW"><p class="pks">よく使う工種</p><div class="opts" id="pkStd"></div></div>
 <div class="btns"><button type="button" class="btn sm" id="pkClear">未入力に戻す</button></div></div>
-<div id="pkKb" hidden><div class="blrows"><div class="blr"><span class="edkl" id="pkKbL0"></span><input type="text" id="pkKbV0" data-pi="0" list="pkKbD0" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD0"></datalist></div><div class="blr"><span class="edkl" id="pkKbL1"></span><input type="text" id="pkKbV1" data-pi="1" list="pkKbD1" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD1"></datalist></div><div class="blr"><span class="edkl" id="pkKbL2"></span><input type="text" id="pkKbV2" data-pi="2" list="pkKbD2" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD2"></datalist></div><div class="blr"><span class="edkl" id="pkKbL3"></span><input type="text" id="pkKbV3" data-pi="3" list="pkKbD3" autocomplete="off" enterkeyhint="done"><datalist id="pkKbD3"></datalist></div></div>
+<div id="pkKb" hidden><div id="pkCpW"><p class="pks" style="margin-top:0">ほかの写真からコピー(タップで4行が入る)</p><div class="opts" id="pkCp"></div></div><div class="blrows" style="margin-top:10px"><div class="blr"><span class="edkl" id="pkKbL0"></span><input type="text" id="pkKbV0" data-pi="0" list="pkKbD0" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD0"></datalist></div><div class="blr"><span class="edkl" id="pkKbL1"></span><input type="text" id="pkKbV1" data-pi="1" list="pkKbD1" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD1"></datalist></div><div class="blr"><span class="edkl" id="pkKbL2"></span><input type="text" id="pkKbV2" data-pi="2" list="pkKbD2" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD2"></datalist></div><div class="blr"><span class="edkl" id="pkKbL3"></span><input type="text" id="pkKbV3" data-pi="3" list="pkKbD3" autocomplete="off" enterkeyhint="done"><datalist id="pkKbD3"></datalist></div></div>
 <p class="note" style="margin-top:6px">空にした行は、項目名に合わせて写真の欄から自動で入ります(入らない項目は空欄)。前に入れた中身からも選べます。</p>
 <div class="btns"><button type="button" class="btn sm pri" id="pkKbOk">決定</button></div></div>
 </div></div>
@@ -1022,7 +1023,10 @@ function openPk(p,k){flush();PK={p,k};const no=sorted().indexOf(p)+1;const KR=k=
 if(KR){$("pkTitle").innerHTML='黒板のまん中4行<span class="note">No.'+no+[p.koshu,p.basho].map(x=>(x||"").trim()).filter(Boolean).map(x=>" ・ "+E(x)).join("")+'</span>';
 kbLabels().forEach((l,i)=>{$("pkKbL"+i).textContent="・"+(l.trim()||"(項目名なし)");const el=$("pkKbV"+i),a=kbAuto(l,p);el.value=(p.kbr&&p.kbr[i])||"";el.placeholder=a?"自動: "+a:"空欄";
 $("pkKbD"+i).innerHTML=uniq(PH.map(x=>(x.kbr&&x.kbr[i])||"").filter(v=>v.trim())).slice(0,30).map(v=>'<option value="'+E(v)+'">').join("")});
-$("pkImg").src=thumbURL(p);$("pk").hidden=false;document.documentElement.classList.add("lock");$("pkKbV0").focus();return}
+const S=sorted(),cp=S.map((x,j)=>({x,n:j+1})).filter(o=>o.x!==p&&Array.isArray(o.x.kbr)&&o.x.kbr.some(v=>(v||"").trim()));
+cp.sort((a,b)=>Math.abs(a.n-no)-Math.abs(b.n-no)||a.n-b.n);
+$("pkCpW").hidden=!cp.length;$("pkCp").innerHTML=cp.map(o=>'<button type="button" class="opt" data-cp="'+o.n+'"><b>No.'+o.n+'</b><span>'+E(o.x.kbr.filter(v=>(v||"").trim()).join(" / "))+'</span></button>').join("");PK.cp=S;
+$("pkImg").src=thumbURL(p);$("pk").hidden=false;document.documentElement.classList.add("lock");if(!cp.length)$("pkKbV0").focus();return}
 const N=k==="naiyo";
 $("pkTitle").innerHTML=(N?"内容を入れる":k==="koshu"?"工種を選ぶ":"撮影箇所を選ぶ")+'<span class="note">No.'+no+(N?[p.koshu,p.basho].map(x=>(x||"").trim()).filter(Boolean).map(x=>" ・ "+E(x)).join(""):p.naiyo?" ・ "+E(p.naiyo):"")+'</span>';
 $("pkImg").src=thumbURL(p);$("pkNew").value=N?(p.naiyo||""):"";pkRender();$("pk").hidden=false;document.documentElement.classList.add("lock");
@@ -1037,6 +1041,7 @@ $("pkBg").addEventListener("click",closePk);$("pkX").addEventListener("click",cl
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("pk").hidden)closePk()});
 $("pk").addEventListener("click",e=>{if(!PK)return;const rm=e.target.closest("[data-rm]");
 if(rm){const v=rm.dataset.rm;if(PK.k==="basho")PJ.places=(PJ.places||[]).filter(x=>x!==v);else PJ.koshus=(PJ.koshus||[]).filter(x=>x!==v);pjSave();pkRender();return}
+const c=e.target.closest("[data-cp]");if(c){const q=PK.cp&&PK.cp[+c.dataset.cp-1];if(q&&q.kbr){[0,1,2,3].forEach(i=>{$("pkKbV"+i).value=q.kbr[i]||""});ban("No."+c.dataset.cp+"の4行を入れました。よければ「決定」",null,2500)}return}
 const o=e.target.closest(".opt");if(o)pkSet(o.dataset.v)});
 function pkAdd(){const v=$("pkNew").value.replace(/\s+/g," ").trim();if(v||(PK&&PK.k==="naiyo"))pkSet(v)}
 $("pkAdd").addEventListener("click",pkAdd);
