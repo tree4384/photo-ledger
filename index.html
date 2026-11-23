@@ -306,7 +306,8 @@ a{color:var(--acc)}
 <div class="seg" id="edKbSeg" role="group" aria-labelledby="edKbL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button><button type="button" data-v="off">なし</button></div>
 <div class="seg" id="edKbSize" role="group" aria-label="この写真の黒板の大きさ" style="margin-top:6px"><button type="button" data-v="s">小</button><button type="button" data-v="m">中</button><button type="button" data-v="l">大</button></div>
 <div id="edKbR" hidden style="margin-top:8px"><p class="pks" style="margin-bottom:4px">黒板の項目(この写真)</p><div id="edCpW" hidden style="margin-bottom:8px"><p class="note" style="margin:0 0 4px">ほかの写真からコピー(タップで中身が入る)</p><div class="opts cpl" id="edCp"></div></div><div class="blrows" id="edKbRows"></div>
-<p class="note" style="margin-top:4px">空にした行は、項目名に合わせて写真の欄から自動で入ります(入らない項目は空欄)。</p></div></div>
+<button type="button" class="btn sm" id="edKbAdd" style="margin-top:6px">＋ 項目を追加</button>
+<p class="note" style="margin-top:4px">左が項目名(この工事の写真ぜんぶ共通)、右がこの写真の中身。中身を空にした行は、項目名に合わせて写真の欄から自動で入ります(入らない項目は空欄)。</p></div></div>
 <div class="aibar"><button type="button" class="btn pri" id="edAi">AIで入れ直す</button><p class="note" id="edAiSt"></p></div>
 <p class="note" id="edMsg" role="status"></p>
 <div class="row2">
@@ -707,12 +708,15 @@ $("kbLSum").textContent=L.length+"行 ・ "+L.map(l=>l.trim()||"(空)").join("�
 $("kbLTg").addEventListener("click",()=>{ls("pl-klo",ls("pl-klo")==="1"?"0":"1");kbLRender()});
 const kbLUpd=()=>{pjSave();kbShow();renderList();if(ED)edKbShow()};
 $("kbLBox").addEventListener("input",e=>{if(e.target.dataset.kl===undefined||!kbPj())return;PJ.kb.labels=kbLabels().map((l,i)=>$("kbL"+i)?$("kbL"+i).value:l);pjSave();clearTimeout(kbLT);kbLT=setTimeout(()=>{kbShow();renderList()},500)});
-$("kbLAdd").addEventListener("click",()=>{if(!kbPj())return;const L=kbLabels();if(L.length>=KBN_MAX)return;L.push("");PJ.kb.labels=L;kbLUpd();const el=$("kbL"+(L.length-1));if(el)el.focus()});
+/* 項目を足す(工事情報・写真の画面の両方から)。pf=足したあとフォーカスする欄のidの頭 */
+function kbLAddRow(pf){if(!kbPj())return;const L=kbLabels();if(L.length>=KBN_MAX)return;L.push("");PJ.kb.labels=L;kbLUpd();const el=$(pf+(L.length-1));if(el)el.focus()}
+$("kbLAdd").addEventListener("click",()=>kbLAddRow("kbL"));
 /* 行を消すと、どの写真もその行の中身が消える(7秒間は元に戻せる) */
-$("kbLRows").addEventListener("click",e=>{const b=e.target.closest("[data-kld]");if(!b||!kbPj())return;const i=+b.dataset.kld,L=kbLabels();if(L.length<=KBN_MIN)return;
+$("kbLRows").addEventListener("click",e=>{const b=e.target.closest("[data-kld]");if(b)kbLDel(+b.dataset.kld)});
+function kbLDel(i){if(!kbPj())return;const L=kbLabels();if(L.length<=KBN_MIN)return;
 const old=L.slice(),bk=PH.filter(x=>Array.isArray(x.kbr)).map(x=>[x,x.kbr.slice()]),nm=old[i].trim()||(i+1)+"行目";
 L.splice(i,1);PJ.kb.labels=L;bk.forEach(([x])=>{x.kbr.splice(i,1);if(!x.kbr.some(v=>(v||"").trim()))delete x.kbr;savePhoto(x)});kbLUpd();
-ban("「"+nm+"」の行を消しました",{label:"元に戻す",fn:()=>{PJ.kb.labels=old;bk.forEach(([x,a])=>{x.kbr=a;savePhoto(x)});kbLUpd();banOff()}},7000)});
+ban("「"+nm+"」の行を消しました",{label:"元に戻す",fn:()=>{PJ.kb.labels=old;bk.forEach(([x,a])=>{x.kbr=a;savePhoto(x)});kbLUpd();banOff()}},7000)}
 $("kbLRe").addEventListener("click",()=>{if(!kbPj())return;PJ.kb.labels=BLL0.slice();kbLUpd()});
 $("kbCol").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!kbPj())return;PJ.kb.color=b.dataset.v;pjSave();kbShow();renderList()});
 $("kbSize").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!kbPj())return;PJ.kb.size=b.dataset.v;pjSave();kbShow();renderList()});
@@ -810,8 +814,9 @@ function edKbShow(){const p=ED,el=$("edKb");if(!p)return;$("edKbRow").hidden=!kb
 document.querySelectorAll("#edKbSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===(pos||"off"))));
 $("edKbSize").hidden=!pos;const tb=!!pos&&kbPjType()==="b";$("edKbR").hidden=!tb;
 if(tb){const cp=kbCpList(p);$("edCpW").hidden=!cp.n;$("edCp").innerHTML=cp.h;EDCP=cp.S}
-if(tb&&$("edKbRows").children.length!==kbLabels().length)$("edKbRows").innerHTML=kbVRows("edKb","ki",false);
-if(tb)kbLabels().forEach((l,i)=>{$("edKbL"+i).textContent="・"+(l.trim()||"(項目名なし)");const el=$("edKbV"+i),a=kbAuto(l,p);if(document.activeElement!==el)el.value=(p.kbr&&p.kbr[i])||"";el.placeholder=a?"自動: "+a:"空欄"});document.querySelectorAll("#edKbSize button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===kbSize(p))));
+if(tb){const L=kbLabels();if($("edKbRows").children.length!==L.length)$("edKbRows").innerHTML=L.map((l,i)=>'<div class="lrow"><div class="blr"><input type="text" id="edKbL'+i+'" data-kel="'+i+'" autocomplete="off" placeholder="項目名" aria-label="'+(i+1)+'行目の項目名"><input type="text" id="edKbV'+i+'" data-ki="'+i+'" autocomplete="off" aria-label="'+(i+1)+'行目の中身"></div><button type="button" class="rm" data-ked="'+i+'" aria-label="'+(i+1)+'行目を削除">×</button></div>').join("");
+$("edKbRows").querySelectorAll("[data-ked]").forEach(b=>b.disabled=L.length<=KBN_MIN);$("edKbAdd").hidden=L.length>=KBN_MAX}
+if(tb)kbLabels().forEach((l,i)=>{const le=$("edKbL"+i);if(document.activeElement!==le)le.value=l;const el=$("edKbV"+i),a=kbAuto(l,p);if(document.activeElement!==el)el.value=(p.kbr&&p.kbr[i])||"";el.placeholder=a?"自動: "+a:"空欄"});document.querySelectorAll("#edKbSize button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===kbSize(p))));
 if(!pos){el.hidden=true;el.removeAttribute("src");return}
 const W=p.w||4,H=p.h||3,r=kbRect(W,H,pos,kbSize(p));
 el.style.left=(r.x/W*100).toFixed(2)+"%";el.style.top=(r.y/H*100).toFixed(2)+"%";el.style.width=(r.w/W*100).toFixed(2)+"%";
@@ -822,6 +827,11 @@ $("edKbSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(
 ED.kb=v===kbPjPos()?"":v;dirty(ED);edKbShow()});
 $("edKbR").addEventListener("input",e=>{const i=e.target.dataset.ki;if(i===undefined||!ED)return;const n=kbLabels().length,a=Array.isArray(ED.kbr)?ED.kbr.slice(0,n):[];while(a.length<n)a.push("");
 a[+i]=e.target.value;if(a.every(v=>!v.trim()))delete ED.kbr;else ED.kbr=a;dirty(ED);edKbLater()});
+/* 写真の画面でも項目名を直す・足す・消す(工事の設定 PJ.kb.labels を変える) */
+let edKLT=null;
+$("edKbR").addEventListener("input",e=>{const i=e.target.dataset.kel;if(i===undefined||!kbPj())return;const L=kbLabels();L[+i]=e.target.value;PJ.kb.labels=L;pjSave();clearTimeout(edKLT);edKLT=setTimeout(()=>{kbShow();renderList();if(ED)edKbShow()},400)});
+$("edKbRows").addEventListener("click",e=>{const b=e.target.closest("[data-ked]");if(b)kbLDel(+b.dataset.ked)});
+$("edKbAdd").addEventListener("click",()=>kbLAddRow("edKbL"));
 $("edCp").addEventListener("click",e=>{const c=e.target.closest("[data-cp]");if(!c||!ED)return;const q=EDCP[+c.dataset.cp-1];if(!q||!q.kbr)return;
 ED.kbr=kbLabels().map((l,i)=>q.kbr[i]||"");ED.kbr.forEach((v,i)=>{$("edKbV"+i).value=v});dirty(ED);edKbShow();ban("No."+c.dataset.cp+"の中身を入れました",null,2500)});
 $("edKbSize").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!ED||!kbPj())return;const v=b.dataset.v;ED.kbSize=v===kbPjSize()?"":v;dirty(ED);edKbShow()});
