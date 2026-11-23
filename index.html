@@ -354,16 +354,21 @@ a{color:var(--acc)}
 <div class="sh-h"><button type="button" class="btn sm" id="blBack">‹ 戻る</button><h2>A4の黒板</h2><span class="sp"></span></div>
 <div class="sh-b">
 <section class="card"><img id="blPrev" class="blprev" alt="A4の黒板の見本">
-<p class="pks" id="blColL">色</p>
+<p class="pks" id="blTypL">種類</p>
+<div class="seg" id="blTyp" role="group" aria-labelledby="blTypL"><button type="button" data-v="a">標準</button><button type="button" data-v="b">寸法あり</button></div>
+<p class="pks" id="blColL" style="margin-top:10px">色</p>
 <div class="seg" id="blCol" role="group" aria-labelledby="blColL"><button type="button" data-v="w">白(手書き用)</button><button type="button" data-v="g">緑</button></div>
-<p class="note">写真に重ねる工事黒板と同じ枠を、A4横いっぱいに1枚で出します。印刷して撮影のときに持てます。白はペンで書きやすく、インクも少なくてすみます。</p></section>
+<p class="note">標準は写真に重ねる工事黒板と同じ枠、寸法ありは工種・設計寸法・実測寸法・備考を書ける枠です。A4横いっぱいに1枚で出します。印刷して撮影のときに持てます。白はペンで書きやすく、インクも少なくてすみます。</p></section>
 <section class="card"><h3>書き込む内容</h3>
 <p class="note" style="margin-top:0">入れた欄だけ黒板に印刷されます。空けた欄は手書き用の空欄になります。</p>
 <label class="l" for="bl-name">工事名</label><input type="text" id="bl-name" data-b="name" autocomplete="off">
 <div class="row2"><div><label class="l" for="bl-koshu">工種</label><input type="text" id="bl-koshu" data-b="koshu" autocomplete="off"></div>
-<div><label class="l" for="bl-basho">場所</label><input type="text" id="bl-basho" data-b="basho" autocomplete="off"></div></div>
-<label class="l" for="bl-naiyo">内容</label><input type="text" id="bl-naiyo" data-b="naiyo" autocomplete="off">
-<div class="row2"><div><label class="l" for="bl-date">日付</label><input type="date" id="bl-date" data-b="date"></div>
+<div><label class="l" for="bl-basho" id="bl-bashoL">場所</label><input type="text" id="bl-basho" data-b="basho" autocomplete="off"></div></div>
+<div data-t="a"><label class="l" for="bl-naiyo">内容</label><input type="text" id="bl-naiyo" data-b="naiyo" autocomplete="off"></div>
+<div data-t="b" hidden><label class="l" for="bl-sekkei">設計寸法</label><input type="text" id="bl-sekkei" data-b="sekkei" autocomplete="off">
+<label class="l" for="bl-jissoku">実測寸法</label><input type="text" id="bl-jissoku" data-b="jissoku" autocomplete="off">
+<label class="l" for="bl-biko">備考</label><input type="text" id="bl-biko" data-b="biko" autocomplete="off"></div>
+<div class="row2"><div><label class="l" for="bl-date" id="bl-dateL">日付</label><input type="date" id="bl-date" data-b="date"></div>
 <div><label class="l" for="bl-company">施工者</label><input type="text" id="bl-company" data-b="company" autocomplete="off"></div></div>
 <div class="btns" style="margin-top:10px"><button type="button" class="btn sm" id="blFill">工事情報から入れる</button><button type="button" class="btn sm" id="blClr">全部空欄にする</button></div>
 </section>
@@ -1105,19 +1110,41 @@ finally{BUSY=false;$("exBack").disabled=false;exRender()}});
    工事黒板と同じ枠を、中身を空けてA4横に1枚。印刷して手書きし、撮影で持つ用。色は白(手書き用、はじめ)か緑(localStorage pl-blc) */
 const BL={w:"白",g:"緑"},BLR=[13,10,10,22.6]; /* A4は手書きしやすいよう内容の行を大きく(写真の黒板は 15.2,11.4,11.4,16.2) */
 let BLC=BL[ls("pl-blc")]?ls("pl-blc"):"w";
+/* 種類: a 標準(写真の黒板と同じ) / b 寸法あり(工事名・工事場所・撮影日、・工種・設計寸法・実測寸法・備考、施工者)。localStorage pl-blt */
+const BLTY={a:"標準",b:"寸法あり"};let BLY=BLTY[ls("pl-blt")]?ls("pl-blt"):"a";
 /* 書き込む内容(入れた欄だけ印刷。空なら手書き用の空欄) */
-function blF(){const v=k=>($("bl-"+k).value||"").trim();return {name:v("name"),koshu:v("koshu"),basho:v("basho"),naiyo:v("naiyo"),date:v("date")?fmtDate(v("date")):"",company:v("company")}}
+function blF(){const v=k=>($("bl-"+k).value||"").trim(),d=v("date");
+return {name:v("name"),koshu:v("koshu"),basho:v("basho"),naiyo:v("naiyo"),sekkei:v("sekkei"),jissoku:v("jissoku"),biko:v("biko"),company:v("company"),
+date:d?(BLY==="b"?d.replace(/^(\d+)-0?(\d+)-0?(\d+)$/,"$1年$2月$3日"):fmtDate(d)):""}}
 /* A4横(297×210mm)のキャンバスに、余白5mm(プリンターが印刷できる端まで)で黒板を目いっぱい真ん中に描く */
 function blDraw(cv,ppm){cv.width=Math.round(297*ppm);cv.height=Math.round(210*ppm);const x=cv.getContext("2d");
 x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);const bw=Math.min(287,200/KB_H)*ppm,bh=bw*KB_H;
-kbDraw(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),Object.assign({},BLC==="g"?KBG:KBW,{rows:BLR}))}
+const t=BLC==="g"?KBG:KBW;if(BLY==="b")kbDrawB(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),t);else kbDraw(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),Object.assign({},t,{rows:BLR}))}
+/* 寸法ありの黒板。寸法は kbDraw と同じく幅を100とした割合 */
+function kbDrawB(x,bx,by,bw,f,t){t=t||KBG;const u=bw/100,bh=bw*KB_H,pd=2.2*u,lw=24*u,ix=bx+pd,iy=by+pd,iw=bw-pd*2,ih=bh-pd*2;
+x.save();x.fillStyle=t.bg;x.fillRect(bx,by,bw,bh);
+x.strokeStyle=t.ed;x.lineWidth=Math.max(1,0.5*u);x.strokeRect(bx+x.lineWidth/2,by+x.lineWidth/2,bw-x.lineWidth,bh-x.lineWidth);
+x.strokeStyle=t.ln;x.lineWidth=Math.max(1,0.7*u);x.strokeRect(ix,iy,iw,ih);x.lineWidth=Math.max(1,0.4*u);x.textBaseline="middle";x.textAlign="left";
+const line=(x1,y1,x2,y2)=>{x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.stroke()};
+const lab=(s,lx,cy,w)=>{x.fillStyle=t.lab;x.textAlign="center";kbFit(x,s,lx+w/2,cy,w-2*u,5*u,3*u,false);x.textAlign="left";x.fillStyle=t.val};
+const vx=ix+lw+2.4*u,vw=iw-lw-4.4*u;let y=iy;
+[["工事名",f.name,9.6],["工事場所",f.basho,9],["撮影日",f.date,9]].forEach(([l,v,h])=>{const hh=h*u,cy=y+hh/2;lab(l,ix,cy,lw);kbFit(x,v,vx,cy,vw,5.6*u,3.4*u,true);y+=hh;line(ix,y,ix+iw,y)});
+line(ix+lw,iy,ix+lw,y);
+/* まん中: 箇条書き4行(線なし) */
+const bot=9.6*u,mh=iy+ih-bot-y,lh=mh/4,bl=20*u,bx2=ix+3*u;
+[["・工　　種",f.koshu],["・設計寸法",f.sekkei],["・実測寸法",f.jissoku],["・備　　考",f.biko]].forEach(([l,v],i)=>{const cy=y+lh*(i+0.5);
+x.fillStyle=t.lab;kbFit(x,l,bx2,cy,bl,4.4*u,3*u,false);x.fillStyle=t.val;kbFit(x,v,bx2+bl+1.5*u,cy,iw-bl-6*u,5.2*u,3.2*u,true)});
+y+=mh;line(ix,y,ix+iw,y);const cy=y+bot/2;lab("施工者",ix,cy,lw);kbFit(x,f.company,vx,cy,vw,5.6*u,3.4*u,true);line(ix+lw,y,ix+lw,iy+ih);x.restore()}
 function blShow(){document.querySelectorAll("#blCol button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===BLC)));
+document.querySelectorAll("#blTyp button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===BLY)));
+document.querySelectorAll("#bl [data-t]").forEach(d=>d.hidden=d.dataset.t!==BLY);$("bl-bashoL").textContent=BLY==="b"?"工事場所":"場所";$("bl-dateL").textContent=BLY==="b"?"撮影日":"日付";
 const c=document.createElement("canvas");blDraw(c,1.6);$("blPrev").src=c.toDataURL("image/png");c.width=c.height=0}
 $("blBtn").addEventListener("click",async()=>{flush();banOff();clearFiles($("blFiles"));$("blMsg").textContent="";$("blMsg").classList.remove("ng");await fontsReady();blShow();openSheet("bl")});
 let BLT=0;const blRe=()=>{clearFiles($("blFiles"));$("blMsg").textContent="";cancelAnimationFrame(BLT);BLT=requestAnimationFrame(blShow)};
 $("bl").addEventListener("input",e=>{if(e.target.dataset.b)blRe()});
 $("blFill").addEventListener("click",()=>{$("bl-name").value=(PJ.name||"").trim();$("bl-company").value=(PJ.company||"").trim();if(!$("bl-date").value)$("bl-date").value=ymd(new Date());blRe()});
 $("blClr").addEventListener("click",()=>{document.querySelectorAll("#bl [data-b]").forEach(i=>i.value="");blRe()});
+$("blTyp").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;BLY=b.dataset.v;ls("pl-blt",BLY);blRe()});
 $("blBack").addEventListener("click",()=>{if(BUSY)return;closeSheet("bl")});
 $("blCol").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;BLC=b.dataset.v;ls("pl-blc",BLC);clearFiles($("blFiles"));$("blMsg").textContent="";blShow()});
 $("blGo").addEventListener("click",async()=>{if(BUSY)return;BUSY=true;$("blGo").disabled=true;clearFiles($("blFiles"));$("blMsg").classList.remove("ng");
@@ -1125,7 +1152,7 @@ try{$("blMsg").textContent="PDFの部品を読み込み中…";await need("pdf")
 const {jsPDF}=window.jspdf,doc=new jsPDF({unit:"mm",format:"a4",orientation:"landscape",compress:true}),cv=document.createElement("canvas");
 blDraw(cv,PX);doc.addImage(cv.toDataURL("image/jpeg",0.92),"JPEG",0,0,297,210,undefined,"FAST");cv.width=cv.height=0;
 doc.setProperties({title:"工事黒板(空欄)",creator:"施工写真台帳"});
-fileItem($("blFiles"),doc.output("blob"),"工事黒板_"+(fsafe(blF().name)||"空欄")+"_"+BL[BLC]+"_A4.pdf");
+fileItem($("blFiles"),doc.output("blob"),"工事黒板_"+(fsafe(blF().name)||"空欄")+"_"+BLTY[BLY]+"_"+BL[BLC]+"_A4.pdf");
 $("blMsg").textContent="できました。「共有・保存」から印刷や「ファイルに保存」ができます。印刷は用紙A4・横、拡大縮小なし(100%)で。"}
 catch(e){console.error(e);$("blMsg").textContent="作成できませんでした: "+(e&&e.message||e);$("blMsg").classList.add("ng")}
 finally{BUSY=false;$("blGo").disabled=false}});
