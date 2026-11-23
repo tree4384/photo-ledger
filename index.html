@@ -1103,13 +1103,14 @@ finally{BUSY=false;$("exBack").disabled=false;exRender()}});
 
 /* ===== 出力: A4の黒板(空欄) =====
    工事黒板と同じ枠を、中身を空けてA4横に1枚。印刷して手書きし、撮影で持つ用。色は白(手書き用、はじめ)か緑(localStorage pl-blc) */
-const BL={w:"白",g:"緑"};let BLC=BL[ls("pl-blc")]?ls("pl-blc"):"w";
+const BL={w:"白",g:"緑"},BLR=[13,10,10,22.6]; /* A4は手書きしやすいよう内容の行を大きく(写真の黒板は 15.2,11.4,11.4,16.2) */
+let BLC=BL[ls("pl-blc")]?ls("pl-blc"):"w";
 /* 書き込む内容(入れた欄だけ印刷。空なら手書き用の空欄) */
 function blF(){const v=k=>($("bl-"+k).value||"").trim();return {name:v("name"),koshu:v("koshu"),basho:v("basho"),naiyo:v("naiyo"),date:v("date")?fmtDate(v("date")):"",company:v("company")}}
 /* A4横(297×210mm)のキャンバスに、余白10mmで黒板を真ん中に描く */
 function blDraw(cv,ppm){cv.width=Math.round(297*ppm);cv.height=Math.round(210*ppm);const x=cv.getContext("2d");
 x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);const bw=Math.min(277,190/KB_H)*ppm,bh=bw*KB_H;
-kbDraw(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),BLC==="g"?KBG:KBW)}
+kbDraw(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),Object.assign({},BLC==="g"?KBG:KBW,{rows:BLR}))}
 function blShow(){document.querySelectorAll("#blCol button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===BLC)));
 const c=document.createElement("canvas");blDraw(c,1.6);$("blPrev").src=c.toDataURL("image/png");c.width=c.height=0}
 $("blBtn").addEventListener("click",async()=>{flush();banOff();clearFiles($("blFiles"));$("blMsg").textContent="";$("blMsg").classList.remove("ng");await fontsReady();blShow();openSheet("bl")});
@@ -1214,7 +1215,8 @@ x.lineWidth=Math.max(1,0.4*u);x.textBaseline="middle";x.textAlign="left";
 const line=(x1,y1,x2,y2)=>{x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.stroke()};
 const lab=(s,lx,cy,w)=>{x.fillStyle=t.lab;x.textAlign="center";kbFit(x,s,lx+w/2,cy,w-1.6*u,4.9*u,3*u,false);x.textAlign="left";x.fillStyle=t.val};
 let y=iy;const vx=ix+lw+2*u,vw=iw-lw-4*u;
-[["工事名",f.name,15.2,2],["工　種",f.koshu,11.4,1],["場　所",f.basho,11.4,1],["内　容",f.naiyo,16.2,2]].forEach(([l,v,h,n])=>{const hh=h*u,cy=y+hh/2;lab(l,ix,cy,lw);
+const rh=t.rows||[15.2,11.4,11.4,16.2]; /* 行の高さ(工事名・工種・場所・内容)。日付の行は残り */
+[["工事名",f.name,rh[0],2],["工　種",f.koshu,rh[1],1],["場　所",f.basho,rh[2],1],["内　容",f.naiyo,rh[3],2]].forEach(([l,v,h,n])=>{const hh=h*u,cy=y+hh/2;lab(l,ix,cy,lw);
 if(n>1)kbWrap(x,v,vx,cy,vw,6.2*u,4.3*u,true);else kbFit(x,v,vx,cy,vw,6.2*u,3.6*u,true);y+=hh;line(ix,y,ix+iw,y)});
 /* いちばん下の行: 日付 | 施工者 */
 const hh=iy+ih-y,cy=y+hh/2,dw=29*u,sw=13.5*u,sx=ix+lw+dw;
