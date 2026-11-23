@@ -323,8 +323,8 @@ a{color:var(--acc)}
 <div><label class="l" for="f-koshu">工種</label><input type="text" id="f-koshu" data-f="koshu" list="dl-koshu" autocomplete="off"></div>
 <div><label class="l" for="f-shubetsu">種別</label><input type="text" id="f-shubetsu" data-f="shubetsu" list="dl-shu" autocomplete="off"></div>
 </div>
-<label class="l" for="f-naiyo">内容</label><input type="text" id="f-naiyo" data-f="naiyo" autocomplete="off" placeholder="例: 天井内 PF管φ22 隠ぺい配管">
-<label class="l" for="f-biko">備考</label><textarea id="f-biko" data-f="biko" rows="2"></textarea>
+<div id="f-nbW"><label class="l" for="f-naiyo">内容</label><input type="text" id="f-naiyo" data-f="naiyo" autocomplete="off" placeholder="例: 天井内 PF管φ22 隠ぺい配管">
+<label class="l" for="f-biko">備考</label><textarea id="f-biko" data-f="biko" rows="2"></textarea></div>
 <label class="l" for="f-board">黒板の文字(AIが読み取ったもの・台帳には出ません)</label><textarea id="f-board" data-f="board" rows="2"></textarea>
 <p class="note">工程を選ぶと、写真区分と種別もそれに合わせて入ります。自分で書き換えた欄は、AIで入れ直しても上書きされません(空にすると、またAIが入れます)。</p>
 <div class="btns"><button type="button" class="btn danger" id="edDel">この写真を削除</button></div>
@@ -813,6 +813,8 @@ return {S,n:cp.length,h:cp.map(o=>'<button type="button" class="opt" data-cp="'+
 function edKbShow(){const p=ED,el=$("edKb");if(!p)return;$("edKbRow").hidden=!kbPj();const pos=kbPos(p);
 document.querySelectorAll("#edKbSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===(pos||"off"))));
 $("edKbSize").hidden=!pos;const tb=!!pos&&kbPjType()==="b";$("edKbR").hidden=!tb;
+/* カスタマイズ黒板の写真は、内容・備考の欄を出さない(黒板の項目で入れる。台帳もそちらを使う kbLedger) */
+$("f-nbW").hidden=tb;
 if(tb){const cp=kbCpList(p);$("edCpW").hidden=!cp.n;$("edCp").innerHTML=cp.h;EDCP=cp.S}
 if(tb){const L=kbLabels();if($("edKbRows").children.length!==L.length)$("edKbRows").innerHTML=L.map((l,i)=>'<div class="lrow"><div class="blr"><input type="text" id="edKbL'+i+'" data-kel="'+i+'" autocomplete="off" placeholder="項目名" aria-label="'+(i+1)+'行目の項目名"><input type="text" id="edKbV'+i+'" data-ki="'+i+'" autocomplete="off" aria-label="'+(i+1)+'行目の中身"></div><button type="button" class="rm" data-ked="'+i+'" aria-label="'+(i+1)+'行目を削除">×</button></div>').join("");
 $("edKbRows").querySelectorAll("[data-ked]").forEach(b=>b.disabled=L.length<=KBN_MIN);$("edKbAdd").hidden=L.length>=KBN_MAX}
@@ -1297,7 +1299,11 @@ const CFONT='"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto S
 const ROWS=[["no","No.",8],["date","撮影日",8],["kubun","写真区分",8],["koshu","工種",8],["shubetsu","種別",8],["basho","撮影箇所",10],["naiyo","内容",17],["biko","備考",17]];
 const LY={ml:12,y0:23,bh:84,gap:4,pw:112,tx:127,tw:71,lw:16};
 async function fontsReady(){try{await Promise.all([document.fonts.load('16px "BIZ UDPGothic"',"台帳"),document.fonts.load('bold 16px "BIZ UDPGothic"',"台帳")])}catch(e){}}
-function cell(p,k,no){if(k==="no")return String(no);if(k==="date")return fmtDate(p.date);return (p[k]||"").trim()}
+function cell(p,k,no){if(k==="no")return String(no);if(k==="date")return fmtDate(p.date);if(k==="naiyo"||k==="biko"){const L=kbLedger(p);if(L)return L[k]}return (p[k]||"").trim()}
+/* カスタマイズ黒板の写真: 台帳の「備考」= 項目「備考」の中身、「内容」= ほかの項目(工種・種別・場所・工程・写真区分は台帳に欄があるので除く)を「項目名 中身」で並べる */
+function kbLedger(p){if(!(kbPos(p)&&kbPjType()==="b"))return null;const own=["工種","種別","場所","撮影箇所","工程","写真区分"],k=l=>String(l||"").replace(/[\s　]/g,"");
+const R=kbFieldsB(p).rows.filter(([l,v])=>v);
+return {biko:R.filter(([l])=>k(l)==="備考").map(([l,v])=>v).join(" / "),naiyo:R.filter(([l])=>own.indexOf(k(l))<0&&k(l)!=="備考").map(([l,v])=>(k(l)==="内容"||!l?v:l.replace(/\s+/g,"")+" "+v)).join(" / ")}}
 function setF(x,mm,bold){x.font=(bold?"bold ":"")+(mm*PX).toFixed(1)+"px "+CFONT}
 function lineMM(x,x1,y1,x2,y2,w,col){x.strokeStyle=col||"#7d8a97";x.lineWidth=Math.max(1,w*PX);x.beginPath();x.moveTo(x1*PX,y1*PX);x.lineTo(x2*PX,y2*PX);x.stroke()}
 function rectMM(x,rx,ry,rw,rh,w,col){x.strokeStyle=col||"#3a4652";x.lineWidth=Math.max(1,w*PX);x.strokeRect(rx*PX,ry*PX,rw*PX,rh*PX)}
@@ -1466,7 +1472,7 @@ r=r0+ROWS.length;if(k%5===4)await sleep(0)}
 /* 一覧シート */
 const w2=wb.addWorksheet("一覧",{views:[{state:"frozen",ySplit:1}],pageSetup:{paperSize:9,orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.3,footer:0.3},printTitlesRow:"1:1"}});
 w2.columns=[{header:"No.",key:"no",width:6},{header:"撮影日",key:"date",width:12},{header:"写真区分",key:"kubun",width:11},{header:"工種",key:"koshu",width:18},{header:"種別",key:"shubetsu",width:16},{header:"撮影箇所",key:"basho",width:16},{header:"内容",key:"naiyo",width:30},{header:"備考",key:"biko",width:36},{header:"黒板の文字",key:"board",width:36}];
-items.forEach((p,i)=>w2.addRow({no:i+1,date:fmtDate(p.date),kubun:p.kubun||"",koshu:p.koshu||"",shubetsu:p.shubetsu||"",basho:p.basho||"",naiyo:p.naiyo||"",biko:p.biko||"",board:p.board||""}));
+items.forEach((p,i)=>w2.addRow({no:i+1,date:fmtDate(p.date),kubun:p.kubun||"",koshu:p.koshu||"",shubetsu:p.shubetsu||"",basho:p.basho||"",naiyo:cell(p,"naiyo"),biko:cell(p,"biko"),board:p.board||""}));
 w2.eachRow((row,n)=>{row.eachCell(c=>{c.font={name:FN,size:10,bold:n===1};c.alignment={vertical:"top",wrapText:true};c.border={bottom:{style:"hair",color:{argb:"FFB8C2CC"}}};if(n===1)c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFE3EAF1"}}})});
 w2.autoFilter={from:{row:1,column:1},to:{row:1,column:9}};
 prog("Excelを仕上げ中…",1);const buf=await wb.xlsx.writeBuffer();
