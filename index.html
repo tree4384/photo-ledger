@@ -356,10 +356,10 @@ a{color:var(--acc)}
 <div class="sh-b">
 <section class="card"><img id="blPrev" class="blprev" alt="A4の黒板の見本">
 <p class="pks" id="blTypL">種類</p>
-<div class="seg" id="blTyp" role="group" aria-labelledby="blTypL"><button type="button" data-v="a">標準</button><button type="button" data-v="b">寸法あり</button></div>
+<div class="seg" id="blTyp" role="group" aria-labelledby="blTypL"><button type="button" data-v="a">標準</button><button type="button" data-v="b">カスタマイズ</button></div>
 <p class="pks" id="blColL" style="margin-top:10px">色</p>
 <div class="seg" id="blCol" role="group" aria-labelledby="blColL"><button type="button" data-v="w">白(手書き用)</button><button type="button" data-v="g">緑</button></div>
-<p class="note">標準は写真に重ねる工事黒板と同じ枠、寸法ありは工種・設計寸法・実測寸法・備考を書ける枠です。A4横いっぱいに1枚で出します。印刷して撮影のときに持てます。白はペンで書きやすく、インクも少なくてすみます。</p></section>
+<p class="note">標準は写真に重ねる工事黒板と同じ枠、カスタマイズはまん中の4行の項目名(はじめは工種・設計寸法・実測寸法・備考)を自由に変えられる枠です。A4横いっぱいに1枚で出します。印刷して撮影のときに持てます。白はペンで書きやすく、インクも少なくてすみます。</p></section>
 <section class="card"><h3>書き込む内容</h3>
 <p class="note" style="margin-top:0">入れた欄だけ黒板に印刷されます。空けた欄は手書き用の空欄になります。</p>
 <label class="l" for="bl-name">工事名</label><input type="text" id="bl-name" data-b="name" autocomplete="off">
@@ -1112,8 +1112,8 @@ finally{BUSY=false;$("exBack").disabled=false;exRender()}});
    工事黒板と同じ枠を、中身を空けてA4横に1枚。印刷して手書きし、撮影で持つ用。色は白(手書き用、はじめ)か緑(localStorage pl-blc) */
 const BL={w:"白",g:"緑"},BLR=[13,10,10,22.6]; /* A4は手書きしやすいよう内容の行を大きく(写真の黒板は 15.2,11.4,11.4,16.2) */
 let BLC=BL[ls("pl-blc")]?ls("pl-blc"):"w";
-/* 種類: a 標準(写真の黒板と同じ) / b 寸法あり(工事名・工事場所・撮影日、・工種・設計寸法・実測寸法・備考、施工者)。localStorage pl-blt */
-const BLTY={a:"標準",b:"寸法あり"},BLL0=["工種","設計寸法","実測寸法","備考"]; /* 寸法ありのまん中4行の項目名(はじめ)。書き換えたものは localStorage pl-bll */
+/* 種類: a 標準(写真の黒板と同じ) / b カスタマイズ(工事名・工事場所・撮影日、・工種・設計寸法・実測寸法・備考、施工者)。localStorage pl-blt */
+const BLTY={a:"標準",b:"カスタマイズ"},BLL0=["工種","設計寸法","実測寸法","備考"]; /* カスタマイズのまん中4行の項目名(はじめ)。書き換えたものは localStorage pl-bll */
 function blLLoad(){let a=null;try{a=JSON.parse(ls("pl-bll")||"null")}catch(e){}if(!Array.isArray(a)||a.length!==4)a=BLL0;a.forEach((l,i)=>$("bl-l"+i).value=String(l||""))}
 let BLY=BLTY[ls("pl-blt")]?ls("pl-blt"):"a";
 /* 書き込む内容(入れた欄だけ印刷。空なら手書き用の空欄) */
@@ -1124,7 +1124,7 @@ date:d?(BLY==="b"?d.replace(/^(\d+)-0?(\d+)-0?(\d+)$/,"$1年$2月$3日"):fmtDate
 function blDraw(cv,ppm){cv.width=Math.round(297*ppm);cv.height=Math.round(210*ppm);const x=cv.getContext("2d");
 x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);const bw=Math.min(287,200/KB_H)*ppm,bh=bw*KB_H;
 const t=BLC==="g"?KBG:KBW;if(BLY==="b")kbDrawB(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),t);else kbDraw(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),Object.assign({},t,{rows:BLR}))}
-/* 寸法ありの黒板。寸法は kbDraw と同じく幅を100とした割合 */
+/* カスタマイズの黒板。寸法は kbDraw と同じく幅を100とした割合 */
 function kbDrawB(x,bx,by,bw,f,t){t=t||KBG;const u=bw/100,bh=bw*KB_H,pd=2.2*u,lw=24*u,ix=bx+pd,iy=by+pd,iw=bw-pd*2,ih=bh-pd*2;
 x.save();x.fillStyle=t.bg;x.fillRect(bx,by,bw,bh);
 x.strokeStyle=t.ed;x.lineWidth=Math.max(1,0.5*u);x.strokeRect(bx+x.lineWidth/2,by+x.lineWidth/2,bw-x.lineWidth,bh-x.lineWidth);
