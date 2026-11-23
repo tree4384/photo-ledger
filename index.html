@@ -700,7 +700,7 @@ $("kbTyp").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
 let kbLT=null;
 /* 項目名の行: 数が変わったときだけ作り直す(入力中のフォーカスを消さない) */
 function kbLRender(){const L=kbLabels(),box=$("kbLRows");
-if(box.children.length!==L.length)box.innerHTML=L.map((l,i)=>'<div class="lrow"><input type="text" id="kbL'+i+'" data-kl="'+i+'" autocomplete="off" aria-label="'+(i+1)+'行目の項目名"><button type="button" class="rm" data-kld="'+i+'" aria-label="'+(i+1)+'行目を削除">×</button></div>').join("");
+if(box.querySelectorAll(":scope>.lrow").length!==L.length)box.innerHTML=L.map((l,i)=>'<div class="lrow"><input type="text" id="kbL'+i+'" data-kl="'+i+'" autocomplete="off" aria-label="'+(i+1)+'行目の項目名"><button type="button" class="rm" data-kld="'+i+'" aria-label="'+(i+1)+'行目を削除">×</button></div>').join("");
 L.forEach((l,i)=>{const el=$("kbL"+i);if(document.activeElement!==el)el.value=l});
 box.querySelectorAll("[data-kld]").forEach(b=>b.disabled=L.length<=KBN_MIN);$("kbLAdd").hidden=L.length>=KBN_MAX;
 const op=ls("pl-klo")==="1";$("kbLBody").hidden=!op;$("kbLTg").setAttribute("aria-expanded",String(op));$("kbLTgT").textContent=op?"▲ 閉じる":"▼ 開く";
@@ -808,7 +808,7 @@ $("edAiSt").textContent=aiStatText(p);$("edAiSt").classList.toggle("ng",p.ai==="
 /* 編集画面の黒板: 写真の上に重ねて見せる。位置は台帳に出るときと同じ。「工事黒板(この写真)」でこの写真だけ位置を変える・外す */
 let edKbT=null,EDCP=[];
 /* ===== 入力の候補(一度入れたものから選ぶ・打つと絞り込み) =====
-   欄にフォーカスすると下に候補のボタンが出る。文字を打つとその文字を含むものだけになる。タップで入る */
+   1文字目を打つと下に候補のボタンが出る(その文字で始まるもの→含むものの順)。タップで入る。空なら出さない */
 function kbLHist(){let a=[];try{a=JSON.parse(ls("pl-kbl-hist")||"[]")}catch(e){}return Array.isArray(a)?a:[]}
 function kbLHistAdd(v){v=String(v||"").trim();if(!v)return;const a=kbLHist().filter(x=>x!==v);a.unshift(v);ls("pl-kbl-hist",JSON.stringify(a.slice(0,40)))}
 function sugSrc(el){const id=el.id||"",m=id.match(/^(?:kbL|edKbL|bl-l)(\d+)$/),v=id.match(/^(?:edKbV|pkKbV)(\d+)$/);
@@ -816,13 +816,13 @@ if(m)return uniq(kbLHist().concat(PJ?kbLabels():[],BLL0,["内容","場所","工�
 if(v){const i=+v[1],l=(kbLabels()[i]||"").replace(/[\s　]/g,"");return uniq(PH.map(x=>(x.kbr&&x.kbr[i])||"").concat(l==="工種"?koshuMine().concat(KOSHU):[]).map(x=>String(x||"").trim()).filter(Boolean))}
 const dl={"f-koshu":"dl-koshu","f-shubetsu":"dl-shu","f-basho":"dl-basho"}[id];if(dl)return [...$(dl).options].map(o=>o.value).filter(Boolean);return null}
 let SUG=null;
-function sugShow(el){const a=sugSrc(el);if(!a){sugOff();return}const q=el.value.trim().toLowerCase(),r=a.filter(x=>x!==el.value.trim()&&(!q||x.toLowerCase().indexOf(q)>=0)).slice(0,40);
+function sugShow(el){const a=sugSrc(el);if(!a){sugOff();return}const q=el.value.trim().toLowerCase();if(!q){sugOff();return}const f=a.filter(x=>x!==el.value.trim()),r=f.filter(x=>x.toLowerCase().indexOf(q)===0).concat(f.filter(x=>x.toLowerCase().indexOf(q)>0)).slice(0,20);
 if(!SUG){SUG=document.createElement("div");SUG.className="sug";SUG.addEventListener("pointerdown",e=>e.preventDefault());SUG.addEventListener("mousedown",e=>e.preventDefault());
 SUG.addEventListener("click",e=>{const b=e.target.closest("[data-sv]");if(!b||!SUG.el)return;const t=SUG.el;t.value=b.dataset.sv;t.dispatchEvent(new Event("input",{bubbles:true}));t.dispatchEvent(new Event("change",{bubbles:true}));sugOff()})}
 if(!r.length){sugOff();return}SUG.el=el;SUG.innerHTML=r.map(x=>'<button type="button" class="opt" data-sv="'+E(x)+'">'+E(x)+'</button>').join("");
 const an=el.closest(".lrow")||el.closest(".blr")||el;if(an.nextSibling!==SUG)an.after(SUG)}
 function sugOff(){if(SUG){SUG.remove();SUG.el=null}}
-document.addEventListener("focusin",e=>{const t=e.target;if(t.tagName==="INPUT"&&sugSrc(t))sugShow(t);else sugOff()});
+document.addEventListener("focusin",e=>{if(!SUG||e.target!==SUG.el)sugOff()});
 document.addEventListener("input",e=>{if(SUG&&e.target===SUG.el)sugShow(e.target);else if(e.target.tagName==="INPUT"&&document.activeElement===e.target&&sugSrc(e.target))sugShow(e.target)});
 document.addEventListener("focusout",e=>{if(SUG&&e.target===SUG.el)setTimeout(()=>{if(SUG&&document.activeElement!==SUG.el)sugOff()},150)});
 /* 項目名は入れ終わったら覚える(どの工事でも候補に出る) */
@@ -837,7 +837,7 @@ $("edKbSize").hidden=!pos;const tb=!!pos&&kbPjType()==="b";$("edKbR").hidden=!tb
 /* カスタマイズ黒板の写真は、内容・備考の欄を出さない(黒板の項目で入れる。台帳もそちらを使う kbLedger) */
 $("f-nbW").hidden=tb;
 if(tb){const cp=kbCpList(p);$("edCpW").hidden=!cp.n;$("edCp").innerHTML=cp.h;EDCP=cp.S}
-if(tb){const L=kbLabels();if($("edKbRows").children.length!==L.length)$("edKbRows").innerHTML=L.map((l,i)=>'<div class="lrow"><div class="blr"><input type="text" id="edKbL'+i+'" data-kel="'+i+'" autocomplete="off" placeholder="項目名" aria-label="'+(i+1)+'行目の項目名"><input type="text" id="edKbV'+i+'" data-ki="'+i+'" autocomplete="off" aria-label="'+(i+1)+'行目の中身"></div><button type="button" class="rm" data-ked="'+i+'" aria-label="'+(i+1)+'行目を削除">×</button></div>').join("");
+if(tb){const L=kbLabels();if($("edKbRows").querySelectorAll(":scope>.lrow").length!==L.length)$("edKbRows").innerHTML=L.map((l,i)=>'<div class="lrow"><div class="blr"><input type="text" id="edKbL'+i+'" data-kel="'+i+'" autocomplete="off" placeholder="項目名" aria-label="'+(i+1)+'行目の項目名"><input type="text" id="edKbV'+i+'" data-ki="'+i+'" autocomplete="off" aria-label="'+(i+1)+'行目の中身"></div><button type="button" class="rm" data-ked="'+i+'" aria-label="'+(i+1)+'行目を削除">×</button></div>').join("");
 $("edKbRows").querySelectorAll("[data-ked]").forEach(b=>b.disabled=L.length<=KBN_MIN);$("edKbAdd").hidden=L.length>=KBN_MAX}
 if(tb)kbLabels().forEach((l,i)=>{const le=$("edKbL"+i);if(document.activeElement!==le)le.value=l;const el=$("edKbV"+i),a=kbAuto(l,p);if(document.activeElement!==el)el.value=(p.kbr&&p.kbr[i])||"";el.placeholder=a?"自動: "+a:"空欄"});document.querySelectorAll("#edKbSize button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===kbSize(p))));
 if(!pos){el.hidden=true;el.removeAttribute("src");return}
