@@ -284,10 +284,13 @@ a{color:var(--acc)}
 <div class="pkw" id="pk" hidden><div class="pkbg" id="pkBg"></div>
 <div class="pkp" role="dialog" aria-modal="true" aria-labelledby="pkTitle">
 <div class="pkh"><img id="pkImg" alt=""><h3 id="pkTitle"></h3><button type="button" class="btn sm" id="pkX">閉じる</button></div>
-<p class="pks" id="pkMineL"></p><div class="opts" id="pkMine"></div>
+<div id="pkStdBox"><p class="pks" id="pkMineL"></p><div class="opts" id="pkMine"></div>
 <div class="aikey"><input id="pkNew" type="text" autocomplete="off" enterkeyhint="done"><button type="button" class="btn sm" id="pkAdd">追加</button></div>
 <div id="pkStdW"><p class="pks">よく使う工種</p><div class="opts" id="pkStd"></div></div>
-<div class="btns"><button type="button" class="btn sm" id="pkClear">未入力に戻す</button></div>
+<div class="btns"><button type="button" class="btn sm" id="pkClear">未入力に戻す</button></div></div>
+<div id="pkKb" hidden><div class="blrows"><div class="blr"><span class="edkl" id="pkKbL0"></span><input type="text" id="pkKbV0" data-pi="0" list="pkKbD0" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD0"></datalist></div><div class="blr"><span class="edkl" id="pkKbL1"></span><input type="text" id="pkKbV1" data-pi="1" list="pkKbD1" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD1"></datalist></div><div class="blr"><span class="edkl" id="pkKbL2"></span><input type="text" id="pkKbV2" data-pi="2" list="pkKbD2" autocomplete="off" enterkeyhint="next"><datalist id="pkKbD2"></datalist></div><div class="blr"><span class="edkl" id="pkKbL3"></span><input type="text" id="pkKbV3" data-pi="3" list="pkKbD3" autocomplete="off" enterkeyhint="done"><datalist id="pkKbD3"></datalist></div></div>
+<p class="note" style="margin-top:6px">空にした行は、項目名に合わせて写真の欄から自動で入ります(入らない項目は空欄)。前に入れた中身からも選べます。</p>
+<div class="btns"><button type="button" class="btn sm pri" id="pkKbOk">決定</button></div></div>
 </div></div>
 
 <!-- 写真の編集 -->
@@ -596,11 +599,13 @@ const st=q?sb("ok",AIRUN.has(p.id)?"AI仕分け中":"AI待ち"):p.ai==="ok"?sb("
 const kt=p.koutei||p.kubun;
 const t1=[kt,p.shubetsu].filter(Boolean).join(" ・ ");
 const pk=(k,lab,v)=>'<button type="button" class="pick'+(v?"":" unset")+'" data-k="'+k+'" aria-label="'+lab+(k==="naiyo"?"を入れる":"を選ぶ")+'"><b>'+lab+'</b><span>'+E(v||(q?(AIRUN.has(p.id)?"AIが仕分け中…":"AI待ち"):"未入力"))+'</span><i>▾</i></button>';
+/* カスタマイズ黒板のときは「内容」のかわりに、黒板のまん中4行を入れるボタン */
+const kbPick=p=>{const r=kbFieldsB(p).rows.filter(([l,v])=>v).map(([l,v])=>v);return '<button type="button" class="pick'+(r.length?"":" unset")+'" data-k="kbr" aria-label="黒板のまん中4行を入れる"><b>黒板</b><span>'+E(r.length?r.join(" / "):"未入力")+'</span><i>▾</i></button>'};
 const on=SEL&&SEL.ids.has(p.id);
 /* 工事黒板: 作ってある画像があればすぐ出し、なければあとで kbFill() が入れる */
 const kp=kbPos(p),ku=kp?kbThumb(p,false):"",kb=kp?'<img class="kb '+kp+' z'+kbSize(p)+'" alt="" '+(ku?'src="'+ku+'"':'data-kb="'+p.id+'"')+'>':"";
 h+='<div class="ph'+(on?" on":"")+(SW===p.id?" sw":"")+'" role="button" tabindex="0" data-id="'+p.id+'"><span class="im"><img src="'+thumbURL(p)+'" alt="" loading="lazy">'+kb+'<button type="button" class="no" aria-label="No.'+(i+1)+'を入れ替える">No.'+(i+1)+'<i>⇅</i></button>'+st+'<button type="button" class="del" aria-label="No.'+(i+1)+'の写真を削除">×</button><span class="ck">'+(on?"✓":"")+'</span></span>'+
-'<span class="tx">'+pk("koshu","工種",(p.koshu||"").trim())+pk("basho","場所",(p.basho||"").trim())+pk("naiyo","内容",(p.naiyo||"").trim())+
+'<span class="tx">'+pk("koshu","工種",(p.koshu||"").trim())+pk("basho","場所",(p.basho||"").trim())+(kbPos(p)&&kbPjType()==="b"?kbPick(p):pk("naiyo","内容",(p.naiyo||"").trim()))+
 (t1?'<span class="t1">'+E(t1)+'</span>':"")+'<span class="t2">'+E(fmtDate(p.date))+'</span></span></div>';return h};
 if(grp){const mode=gmode(),none=mode==="basho"?"撮影箇所なし":"工種未入力",keys=(mode==="basho"?placeOrder(PH):koshuKeys(PH)).slice();
 if(a.some(p=>gkey(p)===none))keys.push(none);let n=0;const fold=new Set(foldList());
@@ -1013,7 +1018,11 @@ $("pkNew").placeholder=isN?"内容を入力(例: PF管φ22 隠ぺい配管)":isK
 $("pkStdW").hidden=!isK;
 if(isK)$("pkStd").innerHTML=KOSHU.filter(v=>mine.indexOf(v)<0).map(v=>'<button type="button" class="opt" data-v="'+E(v)+'" aria-pressed="false">'+E(v)+'</button>').join("");
 $("pkClear").hidden=!cur}
-function openPk(p,k){flush();PK={p,k};const no=sorted().indexOf(p)+1;
+function openPk(p,k){flush();PK={p,k};const no=sorted().indexOf(p)+1;const KR=k==="kbr";$("pkStdBox").hidden=KR;$("pkKb").hidden=!KR;
+if(KR){$("pkTitle").innerHTML='黒板のまん中4行<span class="note">No.'+no+[p.koshu,p.basho].map(x=>(x||"").trim()).filter(Boolean).map(x=>" ・ "+E(x)).join("")+'</span>';
+kbLabels().forEach((l,i)=>{$("pkKbL"+i).textContent="・"+(l.trim()||"(項目名なし)");const el=$("pkKbV"+i),a=kbAuto(l,p);el.value=(p.kbr&&p.kbr[i])||"";el.placeholder=a?"自動: "+a:"空欄";
+$("pkKbD"+i).innerHTML=uniq(PH.map(x=>(x.kbr&&x.kbr[i])||"").filter(v=>v.trim())).slice(0,30).map(v=>'<option value="'+E(v)+'">').join("")});
+$("pkImg").src=thumbURL(p);$("pk").hidden=false;document.documentElement.classList.add("lock");$("pkKbV0").focus();return}
 const N=k==="naiyo";
 $("pkTitle").innerHTML=(N?"内容を入れる":k==="koshu"?"工種を選ぶ":"撮影箇所を選ぶ")+'<span class="note">No.'+no+(N?[p.koshu,p.basho].map(x=>(x||"").trim()).filter(Boolean).map(x=>" ・ "+E(x)).join(""):p.naiyo?" ・ "+E(p.naiyo):"")+'</span>';
 $("pkImg").src=thumbURL(p);$("pkNew").value=N?(p.naiyo||""):"";pkRender();$("pk").hidden=false;document.documentElement.classList.add("lock");
@@ -1033,6 +1042,10 @@ function pkAdd(){const v=$("pkNew").value.replace(/\s+/g," ").trim();if(v||(PK&&
 $("pkAdd").addEventListener("click",pkAdd);
 $("pkNew").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();pkAdd()}});
 $("pkClear").addEventListener("click",()=>pkSet(""));
+function pkKbSet(){if(!PK||PK.k!=="kbr")return;const p=PK.p,a=[0,1,2,3].map(i=>$("pkKbV"+i).value.replace(/\s+/g," ").trim());
+if(a.every(v=>!v))delete p.kbr;else p.kbr=a;savePhoto(p);closePk();renderList();ban("黒板のまん中4行を入れました",null,2500)}
+$("pkKbOk").addEventListener("click",pkKbSet);
+$("pkKb").addEventListener("keydown",e=>{const i=e.target.dataset.pi;if(i===undefined||e.key!=="Enter"||e.isComposing)return;e.preventDefault();if(+i<3)$("pkKbV"+(+i+1)).focus();else pkKbSet()});
 
 /* ===== まとめて振り分け =====
    ① 撮影箇所 → ② 工程 を選び、③ 一覧でその写真をタップ →「反映する」。
