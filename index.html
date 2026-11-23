@@ -207,7 +207,7 @@ a{color:var(--acc)}
 .ph img.kb,.edw img.kb{position:absolute;inset:auto;width:36%;height:auto;aspect-ratio:10/7;object-fit:fill;background:#17553a;box-shadow:0 0 0 1px rgba(0,0,0,.3);pointer-events:none}
 .ph img.kb.lt{left:0;top:0}.ph img.kb.rt{right:0;top:0}.ph img.kb.lb{left:0;bottom:0}.ph img.kb.rb{right:0;bottom:0}
 .ph img.kb.zs{width:27%}.ph img.kb.zl{width:47%}
-.kbr .pks+.seg+.pks{margin-top:10px}
+.kbr .pks+.seg+.pks,.kbr .seg+.pks{margin-top:10px}
 .edw{position:relative;max-width:100%;line-height:0}
 .edw.fit #edImg{width:100%;height:100%;max-height:none}
 #edKbRow .pks{margin-bottom:4px}
@@ -231,7 +231,9 @@ a{color:var(--acc)}
 <div class="kbrow"><img id="kbPrev" alt="工事黒板の見本"><div class="kbr"><p class="pks" id="kbSegL">黒板の位置</p>
 <div class="seg kbseg" id="kbSeg" role="group" aria-labelledby="kbSegL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button></div>
 <p class="pks" id="kbSizeL">黒板の大きさ</p>
-<div class="seg" id="kbSize" role="group" aria-labelledby="kbSizeL"><button type="button" data-v="s">小</button><button type="button" data-v="m">中</button><button type="button" data-v="l">大</button></div></div></div>
+<div class="seg" id="kbSize" role="group" aria-labelledby="kbSizeL"><button type="button" data-v="s">小</button><button type="button" data-v="m">中</button><button type="button" data-v="l">大</button></div>
+<p class="pks" id="kbColL">黒板の色</p>
+<div class="seg" id="kbCol" role="group" aria-labelledby="kbColL"><button type="button" data-v="g">緑</button><button type="button" data-v="w">白</button></div></div></div>
 <p class="note">写真の隅に工事黒板を重ねて、一覧と台帳(PDF・Excel)に出します。工事名と施工者はここの内容、工種・場所・内容・日付は写真ごとの欄が入ります(上は見本)。写真ごとに位置・大きさを変えたり外したりするときは、写真を開いて選びます。保存してある元の写真は変わりません。もう一度押すと外れます。画面の下の「黒板写真のみ保存」は、黒板を付けた写真だけを画像(JPEG)で書き出します。</p>
 </div></div>
 <div class="row2">
@@ -657,10 +659,12 @@ const o=e.target.closest(".opt");if(!o)return;PJ.company=o.dataset.v;$("p-compan
 function kbShow(){const on=kbPj(),b=$("kbBtn");b.setAttribute("aria-pressed",String(on));b.textContent=on?"✓ 工事黒板を付けています":"工事黒板を付ける";$("kbBox").hidden=!on;if(!on)return;
 document.querySelectorAll("#kbSeg button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===kbPjPos())));
 document.querySelectorAll("#kbSize button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===kbPjSize())));
-$("kbPrev").src=kbImg({name:(PJ.name||"").trim(),koshu:"幹線設備 ・ 配線",basho:"3階 電気室",naiyo:"CVT60sq ケーブル敷設",date:fmtDate(ymd(new Date())),company:(PJ.company||"").trim()},480)}
-$("kbBtn").addEventListener("click",()=>{const on=!kbPj();PJ.kb={on,pos:kbPjPos(),size:kbPjSize()};pjSave();kbShow();renderList();
+document.querySelectorAll("#kbCol button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===kbPjCol())));
+$("kbPrev").src=kbImg({name:(PJ.name||"").trim(),koshu:"幹線設備 ・ 配線",basho:"3階 電気室",naiyo:"CVT60sq ケーブル敷設",date:fmtDate(ymd(new Date())),company:(PJ.company||"").trim()},480,kbTh())}
+$("kbBtn").addEventListener("click",()=>{const on=!kbPj();PJ.kb={on,pos:kbPjPos(),size:kbPjSize(),color:kbPjCol()};pjSave();kbShow();renderList();
 ban(on?"写真に工事黒板を付けました。台帳(PDF・Excel)にも出ます":"工事黒板を外しました",null,4000)});
 $("kbSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!kbPj())return;PJ.kb.pos=b.dataset.v;pjSave();kbShow();renderList()});
+$("kbCol").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!kbPj())return;PJ.kb.color=b.dataset.v;pjSave();kbShow();renderList()});
 $("kbSize").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!kbPj())return;PJ.kb.size=b.dataset.v;pjSave();kbShow();renderList()});
 {const o=ls("pl-info");$("pjInfo").open=o!=="0"}
 $("pjInfo").addEventListener("toggle",()=>ls("pl-info",$("pjInfo").open?"1":"0"));
@@ -753,7 +757,7 @@ $("edKbSize").hidden=!pos;document.querySelectorAll("#edKbSize button").forEach(
 if(!pos){el.hidden=true;el.removeAttribute("src");return}
 const W=p.w||4,H=p.h||3,r=kbRect(W,H,pos,kbSize(p));
 el.style.left=(r.x/W*100).toFixed(2)+"%";el.style.top=(r.y/H*100).toFixed(2)+"%";el.style.width=(r.w/W*100).toFixed(2)+"%";
-el.src=kbImg(kbFields(p),640);el.hidden=false}
+el.src=kbImg(kbFields(p),640,kbTh());el.hidden=false}
 function edKbLater(){if(!kbPj())return;clearTimeout(edKbT);edKbT=setTimeout(()=>{if(ED)edKbShow()},250)}
 $("edKbSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!ED||!kbPj())return;const v=b.dataset.v;
 /* 工事の設定と同じ位置を選んだら「設定どおり」に戻す(あとで工事の位置を変えたら一緒に動く) */
@@ -1222,6 +1226,9 @@ const KBP=["lt","rt","lb","rb"],KBZ={s:0.3,m:0.4,l:0.52},KB_H=0.7; /* 黒板の�
 function kbPj(){return !!(PJ&&PJ.kb&&PJ.kb.on)}
 function kbPjPos(){const v=PJ&&PJ.kb&&PJ.kb.pos;return KBP.indexOf(v)>=0?v:"lb"}
 function kbPjSize(){const v=PJ&&PJ.kb&&PJ.kb.size;return KBZ[v]?v:"m"}
+/* 黒板の色: g 緑(はじめ) / w 白。PJ.kb.color */
+function kbPjCol(){return PJ&&PJ.kb&&PJ.kb.color==="w"?"w":"g"}
+function kbTh(){return kbPjCol()==="w"?KBW:KBG}
 function kbSize(p){return KBZ[p.kbSize]?p.kbSize:kbPjSize()}
 /* この写真の黒板の位置。付けないときは "" */
 function kbPos(p){if(!kbPj())return "";const v=p.kb||"";if(v==="off")return "";return KBP.indexOf(v)>=0?v:kbPjPos()}
@@ -1261,13 +1268,13 @@ line(ix+lw,iy,ix+lw,iy+ih);line(sx,y,sx,y+hh);line(sx+sw,y,sx+sw,y+hh);x.restore
 function kbRect(pw,ph,pos,size){const bw=Math.min((KBZ[size]||KBZ.m)*Math.sqrt(pw*ph),pw*0.9,ph*0.9/KB_H),bh=bw*KB_H;
 return {x:pos.charAt(0)==="l"?0:pw-bw,y:pos.charAt(1)==="t"?0:ph-bh,w:bw,h:bh}}
 /* (px,py)に幅pw×高さphで描いた写真の上に、その写真の黒板を重ねる。付けない写真なら何もしない */
-function kbOn(x,px,py,pw,ph,p){const pos=kbPos(p);if(!pos)return;const r=kbRect(pw,ph,pos,kbSize(p));kbDraw(x,px+r.x,py+r.y,r.w,kbFields(p))}
+function kbOn(x,px,py,pw,ph,p){const pos=kbPos(p);if(!pos)return;const r=kbRect(pw,ph,pos,kbSize(p));kbDraw(x,px+r.x,py+r.y,r.w,kbFields(p),kbTh())}
 /* 黒板だけの画像(一覧・編集画面で写真に重ねて見せる用) */
 let KBCV=null;const KBC=new Map();
-function kbImg(f,w){const c=KBCV||(KBCV=document.createElement("canvas"));c.width=w;c.height=Math.round(w*KB_H);kbDraw(c.getContext("2d"),0,0,w,f);return c.toDataURL("image/jpeg",0.85)}
+function kbImg(f,w,t){const c=KBCV||(KBCV=document.createElement("canvas"));c.width=w;c.height=Math.round(w*KB_H);kbDraw(c.getContext("2d"),0,0,w,f,t);return c.toDataURL("image/jpeg",0.85)}
 /* 一覧用。中身が同じ黒板は1回だけ作って使い回す。make=false のときは、作ってあるものだけ返す */
-function kbThumb(p,make){const f=kbFields(p),k=[f.name,f.koshu,f.basho,f.naiyo,f.date,f.company].join("\u0001");let u=KBC.get(k);
-if(!u&&make){if(KBC.size>600)KBC.clear();u=kbImg(f,300);KBC.set(k,u)}return u||""}
+function kbThumb(p,make){const f=kbFields(p),k=[kbPjCol(),f.name,f.koshu,f.basho,f.naiyo,f.date,f.company].join("\u0001");let u=KBC.get(k);
+if(!u&&make){if(KBC.size>600)KBC.clear();u=kbImg(f,300,kbTh());KBC.set(k,u)}return u||""}
 /* 一覧で、まだ黒板の画像が入っていない写真に少しずつ入れていく(枚数が多くても画面が固まらないように) */
 let KBF=0;
 function kbFill(){const run=++KBF,els=[...document.querySelectorAll("#grid img.kb[data-kb]")];if(!els.length)return;const by=new Map(PH.map(p=>[p.id,p]));let i=0;
@@ -1383,7 +1390,7 @@ catch(e){m.textContent="書き出せませんでした: "+e.message;m.classList.
 $("bkIn").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f||BUSY)return;BUSY=true;const m=$("bkMsg");m.classList.remove("ng");
 try{m.textContent="読み込み中…";const o=JSON.parse(await f.text());if(!o||o.app!=="photo-ledger"||!Array.isArray(o.photos))throw new Error("写真台帳のバックアップファイルではないようです");
 const pj=newProject((o.project&&o.project.name||"")+"(読み込み)");pj.place=o.project&&o.project.place||"";pj.company=o.project&&o.project.company||"";pj.places=o.project&&Array.isArray(o.project.places)?o.project.places.map(String):[];pj.koshus=o.project&&Array.isArray(o.project.koshus)?o.project.koshus.map(String):[];["kouteis","kubuns"].forEach(k=>{if(o.project&&Array.isArray(o.project[k]))pj[k]=o.project[k].map(String)});
-if(o.project&&o.project.kb&&typeof o.project.kb==="object")pj.kb={on:!!o.project.kb.on,pos:KBP.indexOf(o.project.kb.pos)>=0?o.project.kb.pos:"lb",size:KBZ[o.project.kb.size]?o.project.kb.size:"m"};
+if(o.project&&o.project.kb&&typeof o.project.kb==="object")pj.kb={on:!!o.project.kb.on,pos:KBP.indexOf(o.project.kb.pos)>=0?o.project.kb.pos:"lb",size:KBZ[o.project.kb.size]?o.project.kb.size:"m",color:o.project.kb.color==="w"?"w":"g"};
 await DB.put("projects",pj);PJS.push(pj);let n=0;const idm={};
 for(let i=0;i<o.photos.length;i++){m.textContent="読み込み中… "+(i+1)+" / "+o.photos.length;const s=o.photos[i];if(!s||!s.img)continue;
 try{const blob=await dataURLToBlob(s.img),im=await loadImg(blob);let th;try{th=await resize(im,360,0.72)}finally{freeImg(im)}
