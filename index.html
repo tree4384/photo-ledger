@@ -1107,9 +1107,9 @@ const BL={w:"白",g:"緑"},BLR=[13,10,10,22.6]; /* A4は手書きしやすいよ
 let BLC=BL[ls("pl-blc")]?ls("pl-blc"):"w";
 /* 書き込む内容(入れた欄だけ印刷。空なら手書き用の空欄) */
 function blF(){const v=k=>($("bl-"+k).value||"").trim();return {name:v("name"),koshu:v("koshu"),basho:v("basho"),naiyo:v("naiyo"),date:v("date")?fmtDate(v("date")):"",company:v("company")}}
-/* A4横(297×210mm)のキャンバスに、余白10mmで黒板を真ん中に描く */
+/* A4横(297×210mm)のキャンバスに、余白5mm(プリンターが印刷できる端まで)で黒板を目いっぱい真ん中に描く */
 function blDraw(cv,ppm){cv.width=Math.round(297*ppm);cv.height=Math.round(210*ppm);const x=cv.getContext("2d");
-x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);const bw=Math.min(277,190/KB_H)*ppm,bh=bw*KB_H;
+x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);const bw=Math.min(287,200/KB_H)*ppm,bh=bw*KB_H;
 kbDraw(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),Object.assign({},BLC==="g"?KBG:KBW,{rows:BLR}))}
 function blShow(){document.querySelectorAll("#blCol button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===BLC)));
 const c=document.createElement("canvas");blDraw(c,1.6);$("blPrev").src=c.toDataURL("image/png");c.width=c.height=0}
