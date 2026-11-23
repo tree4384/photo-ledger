@@ -27,6 +27,8 @@
   - fb/ に Firebase(compat 13.4.0)を置いている。CDNは使わない。
 - PDF: 1ページずつキャンバスに描いて jsPDF でまとめる(日本語フォントの埋め込み不要)。Excel: ExcelJS(jsdelivr)。写真台帳シート(A4縦・100%・3枚ごとに改ページ)+一覧シート。
 
+- 入力の候補(sugSrc/sugShow): 黒板の項目名(kbL・edKbL・bl-l。一度入れた項目名は localStorage pl-kbl-hist に覚えてどの工事でも出す)、項目の中身(edKbV・pkKbV。この工事の写真で同じ行に入れたもの)、編集画面の工種・種別・撮影箇所(datalist dl-* の中身)。フォーカスで下に候補ボタン、打つとその文字を含むものに絞り込み、タップで入る(datalist は iPhone で出にくいので使わない)。一覧の「工種 ▾」「場所 ▾」「内容 ▾」の画面は下の欄に打つと上の候補を絞り込む(pkFilt)。
+
 ## アプリを更新したら、Googleドライブにバックアップする
 タイチの希望で、アプリを更新して main に push したら、そのたびに Googleドライブ「電気 › アプリ」へ zip でバックアップします。
 手順とスクリプトは tree4384/vd-calc の CLAUDE.md と同じ。このリポジトリでは KEY=photo-ledger / APP=施工写真台帳 にする。

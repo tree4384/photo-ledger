@@ -150,6 +150,7 @@ padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-ri
 .pjc details[open] summary .note{visibility:hidden}
 .opts{display:flex;flex-wrap:wrap;gap:6px}
 .khd{appearance:none;display:flex;align-items:center;gap:8px;width:100%;font:inherit;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}.khd b{font-size:14px;flex:none}.khd span{flex:1;min-width:0;font-size:13px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.khd i{font-style:normal;font-size:13px;color:var(--acc);flex:none}
+.sug{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px;max-height:136px;overflow-y:auto;-webkit-overflow-scrolling:touch}.sug .opt{min-height:34px;padding:5px 11px;font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lrow{display:flex;gap:6px;align-items:center}.lrow input{flex:1;min-width:0}.lrow .blr{flex:1;min-width:0}.lrow .rm{appearance:none;border:0;background:transparent;color:var(--sub);font-size:20px;line-height:1;padding:6px 4px;cursor:pointer}.lrow .rm:disabled{opacity:.25}
 .cpl{max-height:132px;overflow-y:auto}.cpl .opt{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cpl .opt b{margin-right:6px}.cpl .opt span{color:var(--sub);font-size:13px}
 .opt{appearance:none;font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 13px;min-height:38px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -312,7 +313,7 @@ a{color:var(--acc)}
 <p class="note" id="edMsg" role="status"></p>
 <div class="row2">
 <div><label class="l" for="f-date">撮影日</label><input type="date" id="f-date" data-f="date"></div>
-<div><label class="l" for="f-basho">撮影箇所</label><input type="text" id="f-basho" data-f="basho" list="dl-basho" autocomplete="off" placeholder="例: 3階 事務室"></div>
+<div><label class="l" for="f-basho">撮影箇所</label><input type="text" id="f-basho" data-f="basho" autocomplete="off" placeholder="例: 3階 事務室"></div>
 </div>
 <div class="row2">
 <div><label class="l" for="f-koutei">工程</label><select id="f-koutei" data-f="koutei"></select></div>
@@ -320,8 +321,8 @@ a{color:var(--acc)}
 </div>
 <div class="aikey" id="optNew" hidden><input id="optNewIn" type="text" autocomplete="off" enterkeyhint="done"><button type="button" class="btn sm" id="optNewBtn">追加</button><button type="button" class="btn sm" id="optNewX">やめる</button></div>
 <div class="row2">
-<div><label class="l" for="f-koshu">工種</label><input type="text" id="f-koshu" data-f="koshu" list="dl-koshu" autocomplete="off"></div>
-<div><label class="l" for="f-shubetsu">種別</label><input type="text" id="f-shubetsu" data-f="shubetsu" list="dl-shu" autocomplete="off"></div>
+<div><label class="l" for="f-koshu">工種</label><input type="text" id="f-koshu" data-f="koshu" autocomplete="off"></div>
+<div><label class="l" for="f-shubetsu">種別</label><input type="text" id="f-shubetsu" data-f="shubetsu" autocomplete="off"></div>
 </div>
 <div id="f-nbW"><label class="l" for="f-naiyo">内容</label><input type="text" id="f-naiyo" data-f="naiyo" autocomplete="off" placeholder="例: 天井内 PF管φ22 隠ぺい配管">
 <label class="l" for="f-biko">備考</label><textarea id="f-biko" data-f="biko" rows="2"></textarea></div>
@@ -806,6 +807,26 @@ $("f-date").value=p.date||"";FL.forEach(([f])=>{$("f-"+f).value=p[f]||""});$("f-
 $("edAiSt").textContent=aiStatText(p);$("edAiSt").classList.toggle("ng",p.ai==="err");edKbShow()}
 /* 編集画面の黒板: 写真の上に重ねて見せる。位置は台帳に出るときと同じ。「工事黒板(この写真)」でこの写真だけ位置を変える・外す */
 let edKbT=null,EDCP=[];
+/* ===== 入力の候補(一度入れたものから選ぶ・打つと絞り込み) =====
+   欄にフォーカスすると下に候補のボタンが出る。文字を打つとその文字を含むものだけになる。タップで入る */
+function kbLHist(){let a=[];try{a=JSON.parse(ls("pl-kbl-hist")||"[]")}catch(e){}return Array.isArray(a)?a:[]}
+function kbLHistAdd(v){v=String(v||"").trim();if(!v)return;const a=kbLHist().filter(x=>x!==v);a.unshift(v);ls("pl-kbl-hist",JSON.stringify(a.slice(0,40)))}
+function sugSrc(el){const id=el.id||"",m=id.match(/^(?:kbL|edKbL|bl-l)(\d+)$/),v=id.match(/^(?:edKbV|pkKbV)(\d+)$/);
+if(m)return uniq(kbLHist().concat(PJ?kbLabels():[],BLL0,["内容","場所","工程","種別","材料","施工状況"]).map(x=>String(x||"").trim()).filter(Boolean));
+if(v){const i=+v[1],l=(kbLabels()[i]||"").replace(/[\s　]/g,"");return uniq(PH.map(x=>(x.kbr&&x.kbr[i])||"").concat(l==="工種"?koshuMine().concat(KOSHU):[]).map(x=>String(x||"").trim()).filter(Boolean))}
+const dl={"f-koshu":"dl-koshu","f-shubetsu":"dl-shu","f-basho":"dl-basho"}[id];if(dl)return [...$(dl).options].map(o=>o.value).filter(Boolean);return null}
+let SUG=null;
+function sugShow(el){const a=sugSrc(el);if(!a){sugOff();return}const q=el.value.trim().toLowerCase(),r=a.filter(x=>x!==el.value.trim()&&(!q||x.toLowerCase().indexOf(q)>=0)).slice(0,40);
+if(!SUG){SUG=document.createElement("div");SUG.className="sug";SUG.addEventListener("pointerdown",e=>e.preventDefault());SUG.addEventListener("mousedown",e=>e.preventDefault());
+SUG.addEventListener("click",e=>{const b=e.target.closest("[data-sv]");if(!b||!SUG.el)return;const t=SUG.el;t.value=b.dataset.sv;t.dispatchEvent(new Event("input",{bubbles:true}));t.dispatchEvent(new Event("change",{bubbles:true}));sugOff()})}
+if(!r.length){sugOff();return}SUG.el=el;SUG.innerHTML=r.map(x=>'<button type="button" class="opt" data-sv="'+E(x)+'">'+E(x)+'</button>').join("");
+const an=el.closest(".lrow")||el.closest(".blr")||el;if(an.nextSibling!==SUG)an.after(SUG)}
+function sugOff(){if(SUG){SUG.remove();SUG.el=null}}
+document.addEventListener("focusin",e=>{const t=e.target;if(t.tagName==="INPUT"&&sugSrc(t))sugShow(t);else sugOff()});
+document.addEventListener("input",e=>{if(SUG&&e.target===SUG.el)sugShow(e.target);else if(e.target.tagName==="INPUT"&&document.activeElement===e.target&&sugSrc(e.target))sugShow(e.target)});
+document.addEventListener("focusout",e=>{if(SUG&&e.target===SUG.el)setTimeout(()=>{if(SUG&&document.activeElement!==SUG.el)sugOff()},150)});
+/* 項目名は入れ終わったら覚える(どの工事でも候補に出る) */
+document.addEventListener("change",e=>{if(/^(?:kbL|edKbL|bl-l)\d+$/.test(e.target.id||""))kbLHistAdd(e.target.value)});
 /* 黒板のまん中の行を「ほかの写真からコピー」するボタン(No.が近い順)。S は今の並び(No.=添字+1) */
 function kbCpList(p){const S=sorted(),no=S.indexOf(p)+1,cp=S.map((x,j)=>({x,n:j+1})).filter(o=>o.x!==p&&Array.isArray(o.x.kbr)&&o.x.kbr.some(v=>(v||"").trim()));
 cp.sort((a,b)=>Math.abs(a.n-no)-Math.abs(b.n-no)||a.n-b.n);
@@ -1056,14 +1077,14 @@ return used.has(v)?b:'<span class="pc">'+b+'<button type="button" class="rm" dat
 $("pkMineL").textContent=isN?"この工事で入れた内容(タップで入る)":isK?"この工事の工種":"この工事の場所";
 $("pkAdd").textContent=isN?"決定":"追加";
 $("pkMine").innerHTML=mine.length?mine.map(opt).join(""):'<p class="note" style="margin:0">'+(isN?"まだありません。下に入れて「決定」を押してください。":isK?"まだありません。下の「よく使う工種」から選ぶか、新しく追加してください。":"まだありません。下に入れて「追加」を押してください(例: 3階 事務室)。")+'</p>';
-$("pkNew").placeholder=isN?"内容を入力(例: PF管φ22 隠ぺい配管)":isK?"新しい工種を追加(例: 電灯設備)":"新しい場所を追加(例: 3階 事務室)";
+$("pkNew").placeholder=isN?"内容を入力・検索(例: PF管φ22)":isK?"検索 または 新しい工種を追加":"検索 または 新しい場所を追加";
 $("pkStdW").hidden=!isK;
 if(isK)$("pkStd").innerHTML=KOSHU.filter(v=>mine.indexOf(v)<0).map(v=>'<button type="button" class="opt" data-v="'+E(v)+'" aria-pressed="false">'+E(v)+'</button>').join("");
-$("pkClear").hidden=!cur}
+$("pkClear").hidden=!cur;if($("pkNew").value)pkFilt()}
 function openPk(p,k){flush();PK={p,k};const no=sorted().indexOf(p)+1;const KR=k==="kbr";$("pkStdBox").hidden=KR;$("pkKb").hidden=!KR;
 if(KR){$("pkKbRows").innerHTML=kbVRows("pkKb","pi",true);$("pkTitle").innerHTML='黒板の項目<span class="note">No.'+no+[p.koshu,p.basho].map(x=>(x||"").trim()).filter(Boolean).map(x=>" ・ "+E(x)).join("")+'</span>';
 kbLabels().forEach((l,i)=>{$("pkKbL"+i).textContent="・"+(l.trim()||"(項目名なし)");const el=$("pkKbV"+i),a=kbAuto(l,p);el.value=(p.kbr&&p.kbr[i])||"";el.placeholder=a?"自動: "+a:"空欄";
-$("pkKbD"+i).innerHTML=uniq(PH.map(x=>(x.kbr&&x.kbr[i])||"").filter(v=>v.trim())).slice(0,30).map(v=>'<option value="'+E(v)+'">').join("")});
+});
 const cp=kbCpList(p);$("pkCpW").hidden=!cp.n;$("pkCp").innerHTML=cp.h;PK.cp=cp.S;
 $("pkImg").src=thumbURL(p);$("pk").hidden=false;document.documentElement.classList.add("lock");if(!cp.n)$("pkKbV0").focus();return}
 const N=k==="naiyo";
@@ -1084,6 +1105,9 @@ const c=e.target.closest("[data-cp]");if(c){const q=PK.cp&&PK.cp[+c.dataset.cp-1
 const o=e.target.closest(".opt");if(o)pkSet(o.dataset.v)});
 function pkAdd(){const v=$("pkNew").value.replace(/\s+/g," ").trim();if(v||(PK&&PK.k==="naiyo"))pkSet(v)}
 $("pkAdd").addEventListener("click",pkAdd);
+/* 下の欄に打つと、上の候補(この工事の工種・場所・内容、よく使う工種)をその文字で絞り込む */
+function pkFilt(){const q=$("pkNew").value.trim().toLowerCase();document.querySelectorAll("#pkMine .opt,#pkStd .opt").forEach(b=>{(b.closest(".pc")||b).hidden=!!q&&String(b.dataset.v||"").toLowerCase().indexOf(q)<0})}
+$("pkNew").addEventListener("input",pkFilt);
 $("pkNew").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();pkAdd()}});
 $("pkClear").addEventListener("click",()=>pkSet(""));
 function pkKbSet(){if(!PK||PK.k!=="kbr")return;const p=PK.p,a=kbLabels().map((l,i)=>$("pkKbV"+i).value.replace(/\s+/g," ").trim());
@@ -1335,7 +1359,7 @@ function kbPjSize(){const v=PJ&&PJ.kb&&PJ.kb.size;return KBZ[v]?v:"m"}
 function kbPjType(){return PJ&&PJ.kb&&PJ.kb.type==="b"?"b":"a"}
 function kbLabels(){const a=PJ&&PJ.kb&&PJ.kb.labels;return Array.isArray(a)&&a.length>=KBN_MIN&&a.length<=KBN_MAX?a.map(v=>String(v||"")):BLL0.slice()}
 /* 入力欄の行(項目名+中身)。pf=id の頭, dk=data の名前, dl=datalist を付けるか */
-function kbVRows(pf,dk,dl){const n=kbLabels().length;return kbLabels().map((l,i)=>'<div class="blr"><span class="edkl" id="'+pf+'L'+i+'"></span><input type="text" id="'+pf+'V'+i+'" data-'+dk+'="'+i+'"'+(dl?' list="'+pf+'D'+i+'" enterkeyhint="'+(i<n-1?"next":"done")+'"':'')+' autocomplete="off">'+(dl?'<datalist id="'+pf+'D'+i+'"></datalist>':'')+'</div>').join("")}
+function kbVRows(pf,dk,dl){const n=kbLabels().length;return kbLabels().map((l,i)=>'<div class="blr"><span class="edkl" id="'+pf+'L'+i+'"></span><input type="text" id="'+pf+'V'+i+'" data-'+dk+'="'+i+'"'+(dl?' enterkeyhint="'+(i<n-1?"next":"done")+'"':'')+' autocomplete="off">'+'</div>').join("")}
 /* 項目名から写真の欄を自動で選ぶ */
 function kbAuto(l,p){const k=String(l||"").replace(/[\s　]/g,"");
 if(k==="工種")return uniq([p.koshu,p.shubetsu]).join(" ・ ");if(k==="種別")return (p.shubetsu||"").trim();if(k==="内容")return (p.naiyo||"").trim()||(p.koutei||"").trim();
