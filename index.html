@@ -225,7 +225,7 @@ a{color:var(--acc)}
 <details id="pjInfo">
 <summary><span>工事情報</span><span class="note" id="pjSum"></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
 <label class="l" for="p-name">工事名</label><input type="text" id="p-name" data-p="name" autocomplete="off" placeholder="例: ○○ビル改修電気設備工事">
-<div class="kbset"><div class="btns" style="margin-top:0"><button type="button" class="btn sm" id="kbBtn" aria-pressed="false">工事黒板を付ける</button><button type="button" class="btn sm" id="blBtn">A4の黒板(空欄)を印刷</button></div>
+<div class="kbset"><div class="btns" style="margin-top:0"><button type="button" class="btn sm" id="kbBtn" aria-pressed="false">工事黒板を付ける</button><button type="button" class="btn sm" id="blBtn">A4の黒板を印刷</button></div>
 <div id="kbBox" hidden>
 <div class="kbrow"><img id="kbPrev" alt="工事黒板の見本"><div class="kbr"><p class="pks" id="kbSegL">黒板の位置</p>
 <div class="seg kbseg" id="kbSeg" role="group" aria-labelledby="kbSegL"><button type="button" data-v="lt">左上</button><button type="button" data-v="rt">右上</button><button type="button" data-v="lb">左下</button><button type="button" data-v="rb">右下</button></div>
@@ -351,12 +351,22 @@ a{color:var(--acc)}
 
 <!-- A4の黒板(空欄) -->
 <div class="sheet" id="bl" hidden>
-<div class="sh-h"><button type="button" class="btn sm" id="blBack">‹ 戻る</button><h2>A4の黒板(空欄)</h2><span class="sp"></span></div>
+<div class="sh-h"><button type="button" class="btn sm" id="blBack">‹ 戻る</button><h2>A4の黒板</h2><span class="sp"></span></div>
 <div class="sh-b">
 <section class="card"><img id="blPrev" class="blprev" alt="A4の黒板の見本">
 <p class="pks" id="blColL">色</p>
 <div class="seg" id="blCol" role="group" aria-labelledby="blColL"><button type="button" data-v="w">白(手書き用)</button><button type="button" data-v="g">緑</button></div>
-<p class="note">写真に重ねる工事黒板と同じ枠(工事名・工種・場所・内容・日付・施工者)を、中身を空けてA4横いっぱいに1枚で出します。印刷して手で書き込んで、撮影のときに持てます。白はペンで書きやすく、インクも少なくてすみます。</p></section>
+<p class="note">写真に重ねる工事黒板と同じ枠を、A4横いっぱいに1枚で出します。印刷して撮影のときに持てます。白はペンで書きやすく、インクも少なくてすみます。</p></section>
+<section class="card"><h3>書き込む内容</h3>
+<p class="note" style="margin-top:0">入れた欄だけ黒板に印刷されます。空けた欄は手書き用の空欄になります。</p>
+<label class="l" for="bl-name">工事名</label><input type="text" id="bl-name" data-b="name" autocomplete="off">
+<div class="row2"><div><label class="l" for="bl-koshu">工種</label><input type="text" id="bl-koshu" data-b="koshu" autocomplete="off"></div>
+<div><label class="l" for="bl-basho">場所</label><input type="text" id="bl-basho" data-b="basho" autocomplete="off"></div></div>
+<label class="l" for="bl-naiyo">内容</label><input type="text" id="bl-naiyo" data-b="naiyo" autocomplete="off">
+<div class="row2"><div><label class="l" for="bl-date">日付</label><input type="date" id="bl-date" data-b="date"></div>
+<div><label class="l" for="bl-company">施工者</label><input type="text" id="bl-company" data-b="company" autocomplete="off"></div></div>
+<div class="btns" style="margin-top:10px"><button type="button" class="btn sm" id="blFill">工事情報から入れる</button><button type="button" class="btn sm" id="blClr">全部空欄にする</button></div>
+</section>
 <button type="button" class="btn pri wide" id="blGo">PDFを作成</button>
 <p class="note" id="blMsg" role="status"></p>
 <ul class="files" id="blFiles"></ul>
@@ -1094,14 +1104,19 @@ finally{BUSY=false;$("exBack").disabled=false;exRender()}});
 /* ===== 出力: A4の黒板(空欄) =====
    工事黒板と同じ枠を、中身を空けてA4横に1枚。印刷して手書きし、撮影で持つ用。色は白(手書き用、はじめ)か緑(localStorage pl-blc) */
 const BL={w:"白",g:"緑"};let BLC=BL[ls("pl-blc")]?ls("pl-blc"):"w";
-const BLE={name:"",koshu:"",basho:"",naiyo:"",date:"",company:""};
+/* 書き込む内容(入れた欄だけ印刷。空なら手書き用の空欄) */
+function blF(){const v=k=>($("bl-"+k).value||"").trim();return {name:v("name"),koshu:v("koshu"),basho:v("basho"),naiyo:v("naiyo"),date:v("date")?fmtDate(v("date")):"",company:v("company")}}
 /* A4横(297×210mm)のキャンバスに、余白10mmで黒板を真ん中に描く */
 function blDraw(cv,ppm){cv.width=Math.round(297*ppm);cv.height=Math.round(210*ppm);const x=cv.getContext("2d");
 x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);const bw=Math.min(277,190/KB_H)*ppm,bh=bw*KB_H;
-kbDraw(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,BLE,BLC==="g"?KBG:KBW)}
+kbDraw(x,(cv.width-bw)/2,(cv.height-bh)/2,bw,blF(),BLC==="g"?KBG:KBW)}
 function blShow(){document.querySelectorAll("#blCol button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===BLC)));
 const c=document.createElement("canvas");blDraw(c,1.6);$("blPrev").src=c.toDataURL("image/png");c.width=c.height=0}
 $("blBtn").addEventListener("click",async()=>{flush();banOff();clearFiles($("blFiles"));$("blMsg").textContent="";$("blMsg").classList.remove("ng");await fontsReady();blShow();openSheet("bl")});
+let BLT=0;const blRe=()=>{clearFiles($("blFiles"));$("blMsg").textContent="";cancelAnimationFrame(BLT);BLT=requestAnimationFrame(blShow)};
+$("bl").addEventListener("input",e=>{if(e.target.dataset.b)blRe()});
+$("blFill").addEventListener("click",()=>{$("bl-name").value=(PJ.name||"").trim();$("bl-company").value=(PJ.company||"").trim();if(!$("bl-date").value)$("bl-date").value=ymd(new Date());blRe()});
+$("blClr").addEventListener("click",()=>{document.querySelectorAll("#bl [data-b]").forEach(i=>i.value="");blRe()});
 $("blBack").addEventListener("click",()=>{if(BUSY)return;closeSheet("bl")});
 $("blCol").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;BLC=b.dataset.v;ls("pl-blc",BLC);clearFiles($("blFiles"));$("blMsg").textContent="";blShow()});
 $("blGo").addEventListener("click",async()=>{if(BUSY)return;BUSY=true;$("blGo").disabled=true;clearFiles($("blFiles"));$("blMsg").classList.remove("ng");
@@ -1109,7 +1124,7 @@ try{$("blMsg").textContent="PDFの部品を読み込み中…";await need("pdf")
 const {jsPDF}=window.jspdf,doc=new jsPDF({unit:"mm",format:"a4",orientation:"landscape",compress:true}),cv=document.createElement("canvas");
 blDraw(cv,PX);doc.addImage(cv.toDataURL("image/jpeg",0.92),"JPEG",0,0,297,210,undefined,"FAST");cv.width=cv.height=0;
 doc.setProperties({title:"工事黒板(空欄)",creator:"施工写真台帳"});
-fileItem($("blFiles"),doc.output("blob"),"工事黒板_空欄_"+BL[BLC]+"_A4.pdf");
+fileItem($("blFiles"),doc.output("blob"),"工事黒板_"+(fsafe(blF().name)||"空欄")+"_"+BL[BLC]+"_A4.pdf");
 $("blMsg").textContent="できました。「共有・保存」から印刷や「ファイルに保存」ができます。印刷は用紙A4・横、拡大縮小なし(100%)で。"}
 catch(e){console.error(e);$("blMsg").textContent="作成できませんでした: "+(e&&e.message||e);$("blMsg").classList.add("ng")}
 finally{BUSY=false;$("blGo").disabled=false}});
